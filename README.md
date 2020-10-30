@@ -13,7 +13,8 @@ Make sure you have it installed in your system.
 
 ```shell
 mkdir build && cd build
-conan install ..
+# To build the fmt library from sources
+conan install .. --build=fmt
 
 (win)
 $ cmake .. -G "Visual Studio 16"

@@ -49,7 +49,7 @@ add_subdirectory(tests)
 add_subdirectory(src)
 
 # Application
-#add_subdirectory(app)
+add_subdirectory(app)
 
 #-------------------------------------------------------------------------------
 # Wrap up of settings printed on build
