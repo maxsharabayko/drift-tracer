@@ -5,7 +5,8 @@ jobs:
   linux:
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [macOS-latest]
+        #os: [ubuntu-latest, macOS-latest]
 
     env:
       build_conan_path: "$HOME/.local/bin"
