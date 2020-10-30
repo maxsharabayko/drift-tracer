@@ -2,7 +2,6 @@
 
 #include "pkt_view.hpp"
 
-
 /// A base class for SRT-like packet (data or control).
 /// All other packet types that have a view to SRT header
 /// derive from this class.
@@ -49,4 +48,3 @@ public: // Setters
 	void timestamp(unsigned ts_us) { pkt_view<storage>::template set_field<fld_timestamp>(ts_us); }
 	void dstsockid(uint32_t sock_id) { pkt_view<storage>::template set_field<fld_dstsockid>(sock_id); }
 };
-

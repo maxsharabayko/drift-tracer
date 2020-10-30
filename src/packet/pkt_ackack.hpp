@@ -32,7 +32,7 @@ public:
 	///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	/// 3 |                     Destination Socket ID                     |
 	///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	typedef pkt_field<uint32_t, 1 * 4>     fld_ackno;
+	typedef pkt_field<uint32_t, 1 * 4> fld_ackno;
 
 public: // Getters
 	uint32_t ackno() const { return pkt_view<storage>::template get_field<fld_ackno>(); }
@@ -40,4 +40,3 @@ public: // Getters
 public: // Setters
 	void ackno(uint32_t value) { return pkt_view<storage>::template set_field<fld_ackno>(value); }
 };
-

@@ -3,7 +3,6 @@
 #include "../bits.hpp"
 #include "../buf_view.hpp"
 
-
 /// Packet field description.
 /// @tparam val_type defines the value of the field, e.g. uint32_t, uint8_t.
 /// @tparam byte_offset defines the offset to the field in bytes.
@@ -69,10 +68,7 @@ public:
 	}
 
 	/// Get the value in the field.
-	uint32_t get_value() const
-	{
-		return 0;
-	}
+	uint32_t get_value() const { return 0; }
 
 protected:
 	storage view_; ///< buffer view
