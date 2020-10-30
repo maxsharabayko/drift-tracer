@@ -1,0 +1,26 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  linux:
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+  
+      - name: Install conan
+        shell: bash
+        run: pip3 install conan
+
+      - name: configure
+        run: |
+          mkdir build && cd build
+          conan install ..
+          cmake ../
+      - name: build
+        run: cd _build && cmake --build ./
+        
+        
