@@ -1,10 +1,6 @@
 name: Build
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened]
+on: [push]
+
 jobs:
   linux:
     steps:
@@ -22,5 +18,5 @@ jobs:
           cmake ../
       - name: build
         run: cd _build && cmake --build ./
-        
+
         
