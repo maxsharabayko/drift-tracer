@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
 
+#include "buf_view.hpp"
 #include "packet/pkt_view.hpp"
 
 TEST_CASE("Packet buffer", "[pktbuf]")

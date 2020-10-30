@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(DRIF_TTRACER VERSION 0.0.1 LANGUAGES C CXX)
+project(DRIFT_TRACER VERSION 0.0.1 LANGUAGES C CXX)
 set(VERSION_TYPE "dev" CACHE STRING "version type" FORCE)
 site_name(VERSION_HOST) # read hostname to VERSION_HOST
 set(VERSION_HOST "${VERSION_HOST}" CACHE STRING "host of build" FORCE)
@@ -47,6 +47,9 @@ add_subdirectory(tests)
 
 # Library source code
 add_subdirectory(src)
+
+# Application
+#add_subdirectory(app)
 
 #-------------------------------------------------------------------------------
 # Wrap up of settings printed on build
