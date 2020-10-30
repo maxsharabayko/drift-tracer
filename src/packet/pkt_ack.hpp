@@ -49,14 +49,14 @@ public:
 	///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	///   |                         Receiving Rate                        |
 	///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	typedef pkt_field<uint32_t, 1 * 4>     fld_ackno;
-    typedef pkt_field<uint32_t, 4 * 4>     fld_ackseqno;
-    typedef pkt_field<uint32_t, 5 * 4>     fld_rtt;
-    typedef pkt_field<uint32_t, 6 * 4>     fld_rttvar;
-    typedef pkt_field<uint32_t, 7 * 4>     fld_bufavail;
-    typedef pkt_field<uint32_t, 8 * 4>     fld_recvpktrate;
-    typedef pkt_field<uint32_t, 9 * 4>     fld_capacity;
-    typedef pkt_field<uint32_t, 10 * 4>    fld_recvrate;
+	typedef pkt_field<uint32_t, 1 * 4>  fld_ackno;
+	typedef pkt_field<uint32_t, 4 * 4>  fld_ackseqno;
+	typedef pkt_field<uint32_t, 5 * 4>  fld_rtt;
+	typedef pkt_field<uint32_t, 6 * 4>  fld_rttvar;
+	typedef pkt_field<uint32_t, 7 * 4>  fld_bufavail;
+	typedef pkt_field<uint32_t, 8 * 4>  fld_recvpktrate;
+	typedef pkt_field<uint32_t, 9 * 4>  fld_capacity;
+	typedef pkt_field<uint32_t, 10 * 4> fld_recvrate;
 
 public: // Getters
 	uint32_t ackno() const { return pkt_view<storage>::template get_field<fld_ackno>(); }
@@ -70,12 +70,11 @@ public: // Getters
 
 public: // Setters
 	void ackno(uint32_t value) { return pkt_view<storage>::template set_field<fld_ackno>(value); }
-    void ackseqno(uint32_t value) { return pkt_view<storage>::template set_field<fld_ackseqno>(value); }
-    void rtt(uint32_t value) { return pkt_view<storage>::template set_field<fld_rtt>(value); }
-    void rttvar(uint32_t value) { return pkt_view<storage>::template set_field<fld_rttvar>(value); }
-    void bufavail(uint32_t value) { return pkt_view<storage>::template set_field<fld_bufavail>(value); }
-    void recvpktrate(uint32_t value) { return pkt_view<storage>::template set_field<fld_recvpktrate>(value); }
-    void capacity(uint32_t value) { return pkt_view<storage>::template set_field<fld_capacity>(value); }
-    void recvrate(uint32_t value) { return pkt_view<storage>::template set_field<fld_recvrate>(value); }
+	void ackseqno(uint32_t value) { return pkt_view<storage>::template set_field<fld_ackseqno>(value); }
+	void rtt(uint32_t value) { return pkt_view<storage>::template set_field<fld_rtt>(value); }
+	void rttvar(uint32_t value) { return pkt_view<storage>::template set_field<fld_rttvar>(value); }
+	void bufavail(uint32_t value) { return pkt_view<storage>::template set_field<fld_bufavail>(value); }
+	void recvpktrate(uint32_t value) { return pkt_view<storage>::template set_field<fld_recvpktrate>(value); }
+	void capacity(uint32_t value) { return pkt_view<storage>::template set_field<fld_capacity>(value); }
+	void recvrate(uint32_t value) { return pkt_view<storage>::template set_field<fld_recvrate>(value); }
 };
-
