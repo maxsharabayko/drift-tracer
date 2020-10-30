@@ -22,6 +22,11 @@ jobs:
           pip3 install wheel setuptools
           pip3 install conan
 
+      - if: matrix.os == 'macOS-latest'
+        name: install clang-format
+        run: |
+          brew install clang-format
+
       - name: configure
         shell: bash
         run: |
