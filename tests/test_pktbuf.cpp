@@ -5,7 +5,7 @@
 
 TEST_CASE("Packet buffer", "[pktbuf]")
 {
-	pkt_view const_bufv(const_bufv(nullptr, 0));
+	pkt_view const_buf(const_bufv(nullptr, 0));
 	//const_buf.set(5);
 
 	pkt_view mut_buf(mut_bufv(nullptr, 0));
