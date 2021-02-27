@@ -7,7 +7,6 @@
 #include "spdlog/spdlog.h"
 
 using namespace std;
-using namespace srtx;
 using shared_udp = shared_ptr<socket_udp>;
 
 #ifndef _WIN32
@@ -15,6 +14,8 @@ using shared_udp = shared_ptr<socket_udp>;
 #else
 #define NET_ERROR WSAGetLastError()
 #endif
+
+#define LOG_SOCK_UDP "[UDP] "
 
 extern const set<string> false_names = { "0", "no", "off", "false" };
 
@@ -76,9 +77,10 @@ sockaddr_any CreateAddr(const string& name, unsigned short port, int pref_family
 	return result;
 }
 
-socket_udp::udp(const UriParser &src_uri)
+socket_udp::socket_udp(const UriParser &src_uri)
 	: m_host(src_uri.host())
 	, m_port(src_uri.portno())
+	, m_options(src_uri.parameters())
 {
 	sockaddr_in sa     = sockaddr_in();
 	sa.sin_family      = AF_INET;
@@ -86,28 +88,19 @@ socket_udp::udp(const UriParser &src_uri)
 	m_bind_socket      = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	if (m_bind_socket == INVALID_SOCKET)
-		throw socket::exception("Failed to create a UDP socket. Error code: " + to_string(NET_ERROR));
-
-	if (m_options.count("blocking"))
-	{
-		m_blocking_mode = !false_names.count(m_options.at("blocking"));
-		m_options.erase("blocking");
-	}
+		throw runtime_error("Failed to create a UDP socket. Error code: " + to_string(NET_ERROR));
 
 	int yes = 1;
 	::setsockopt(m_bind_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof yes);
 
-	if (!m_blocking_mode)
-	{ // set non-blocking mode
 #if defined(_WIN32)
-		unsigned long ulyes = 1;
-		if (ioctlsocket(m_bind_socket, FIONBIO, &ulyes) == SOCKET_ERROR)
+	unsigned long ulyes = 1;
+	if (ioctlsocket(m_bind_socket, FIONBIO, &ulyes) == SOCKET_ERROR)
 #else
-		if (ioctl(m_bind_socket, FIONBIO, (const char *)&yes) < 0)
+	if (ioctl(m_bind_socket, FIONBIO, (const char *)&yes) < 0)
 #endif
-		{
-			throw socket::exception("UdpCommon::Setup: ioctl FIONBIO");
-		}
+	{
+		throw runtime_error("UdpCommon::Setup: ioctl FIONBIO");
 	}
 
 	sockaddr_any sa_requested;
@@ -117,14 +110,14 @@ socket_udp::udp(const UriParser &src_uri)
 	}
 	catch (const std::invalid_argument&)
 	{
-		throw socket::exception("create_addr_inet failed");
+		throw runtime_error("create_addr_inet failed");
 	}
 
 	const auto bind_me = [&](const sockaddr_any& sa) {
 		const int       bind_res = ::bind(m_bind_socket, sa.get(), sa.size());
 		if (bind_res < 0)
 		{
-			throw socket::exception("UDP binding has failed");
+			throw runtime_error("UDP binding has failed");
 		}
 	};
 
@@ -147,7 +140,7 @@ socket_udp::udp(const UriParser &src_uri)
 		}
 		catch (const std::invalid_argument&)
 		{
-			throw socket::exception("create_addr_inet failed");
+			throw runtime_error("create_addr_inet failed");
 		}
 
 		bind_me(sa_bind);
@@ -157,14 +150,16 @@ socket_udp::udp(const UriParser &src_uri)
 	if (m_host != "" || ip_bonded)
 	{
 		m_dst_addr = sa_requested;
+		spdlog::info("{}, destination address {}", ip_bonded ? "Bound" : "Not bound", m_dst_addr.str());
 	}
 	else
 	{
 		bind_me(reinterpret_cast<const sockaddr*>(&sa_requested));
+		spdlog::info("Binding to {}", sa_requested.str());
 	}
 }
 
-socket_udp::~udp() { closesocket(m_bind_socket); }
+socket_udp::~socket_udp() { closesocket(m_bind_socket); }
 
 sockaddr_any socket_udp::get_sockaddr() const
 {
@@ -212,7 +207,7 @@ size_t socket_udp::recv(const mut_bufv& buffer, int timeout_ms)
 #endif
 		const int err = NET_ERROR;
 		if (err != EAGAIN && err != EINTR && err != ECONNREFUSED)
-			throw socket::exception("udp::recv::recv");
+			throw runtime_error("udp::recv::recv");
 
 		spdlog::info("UDP reading failed: error {0}. Again.", err);
 		return 0;
@@ -259,7 +254,7 @@ std::pair<size_t, sockaddr_any> socket_udp::recvfrom(const mut_bufv &buffer, int
 		if (err != EAGAIN && err != EINTR && err != ECONNREFUSED)
 		{
 			spdlog::error("UDP reading failed: error {0}.", err);
-			throw socket::exception("udp::recv::recv");
+			throw runtime_error("udp::recv::recv");
 		}
 
 		spdlog::info("UDP reading failed: error {0}. Again.", err);
@@ -303,7 +298,7 @@ int socket_udp::sendto(const sockaddr_any& dst_addr, const const_bufv& buffer, i
 #endif
 		const int err = NET_ERROR;
 		spdlog::error("UDP sending failed: error {0}.", err);
-		throw socket::exception("udp::send::send");
+		throw runtime_error("udp::send::send");
 	}
 
 	return static_cast<size_t>(res);

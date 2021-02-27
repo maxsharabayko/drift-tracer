@@ -12,11 +12,13 @@ public:
 	pkt_ackack(const storage &buf_view)
 		: pkt_base<storage>(buf_view)
 	{
+		this->set_length(16);
 	}
 
 	pkt_ackack(const pkt_base<storage> &pkt)
 		: pkt_base<storage>(pkt)
 	{
+		this->set_length(16);
 	}
 
 public:
