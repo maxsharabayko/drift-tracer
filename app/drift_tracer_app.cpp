@@ -47,6 +47,7 @@ inline void SysCleanupNetwork() {}
 
 #endif
 
+#include "start.hpp"
 
 using namespace std;
 
@@ -99,11 +100,25 @@ int main(int argc, char **argv)
 	CLI::App* cmd_version = app.add_subcommand("version", "Show version info")
 		->callback([]() { cerr << "Version 0.0.1\n"; });
 
+	string url;
+    config cfg;
+    CLI::App* sc_send = add_subcommand(app, cfg, url);
+
 	app.require_subcommand(1);
 	CLI11_PARSE(app, argc, argv);
 
 	// Startup and cleanup network sockets library
 	const NetworkInit nwobject;
+
+	if (sc_send->parsed())
+    {
+        run(url, cfg, force_break);
+        return 0;
+    }
+    else
+    {
+        cerr << "Failed to recognize subcommand" << endl;
+    }
 
 	return 0;
 }

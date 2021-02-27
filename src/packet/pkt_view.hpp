@@ -26,19 +26,16 @@ class pkt_view
 public:
 	pkt_view(const storage &buffer)
 		: view_(buffer)
-		, len_(buffer.size())
 	{
 	}
 
 	pkt_view(const storage &&buffer)
 		: view_(buffer)
-		, len_(buffer.size())
 	{
 	}
 
 	pkt_view(const pkt_view &other)
 		: view_(other.view_)
-		, len_(other.len_)
 	{
 	}
 
@@ -69,8 +66,8 @@ public:
 
 	/// Get the value in the field.
 	uint32_t get_value() const { return 0; }
+	size_t capacity() const { return this->view_.size(); }
 
 protected:
 	storage view_; ///< buffer view
-	size_t  len_;  ///< actual length of content
 };

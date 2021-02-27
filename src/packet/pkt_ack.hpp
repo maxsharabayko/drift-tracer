@@ -12,11 +12,13 @@ public:
 	pkt_ack(const storage &buf_view)
 		: pkt_base<storage>(buf_view)
 	{
+		this->set_length(44);
 	}
 
 	pkt_ack(const pkt_base<storage> &pkt)
 		: pkt_base<storage>(pkt)
 	{
+		this->set_length(44);
 	}
 
 public:
@@ -62,9 +64,9 @@ public: // Getters
 	uint32_t ackno() const { return pkt_view<storage>::template get_field<fld_ackno>(); }
 	uint32_t ackseqno() const { return pkt_view<storage>::template get_field<fld_ackseqno>(); }
 	uint32_t rtt() const { return pkt_view<storage>::template get_field<fld_rtt>(); }
-	uint32_t rttvar() const { return pkt_view<storage>::template get_field<fld_rtt_var>(); }
+	uint32_t rttvar() const { return pkt_view<storage>::template get_field<fld_rttvar>(); }
 	uint32_t bufavail() const { return pkt_view<storage>::template get_field<fld_bufavail>(); }
-	uint32_t recvpktrate() const { return pkt_view<storage>::template get_field<fld_hrecvpktrate>(); }
+	uint32_t recvpktrate() const { return pkt_view<storage>::template get_field<fld_recvpktrate>(); }
 	uint32_t capacity() const { return pkt_view<storage>::template get_field<fld_capacity>(); }
 	uint32_t recvrate() const { return pkt_view<storage>::template get_field<fld_recvrate>(); }
 
