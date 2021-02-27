@@ -2,6 +2,7 @@
 #include <chrono>
 #include <future>
 #include <map>
+#include <mutex>
 
 #include "start.hpp"
 #include "uri_parser.hpp"
@@ -24,6 +25,7 @@ using namespace chrono;
 
 using shared_udp = shared_ptr<socket_udp>;
 
+mutex g_path_mut;
 path_metrics g_path;
 const auto g_start_time = steady_clock::now();
 
@@ -57,11 +59,14 @@ void send_route(shared_udp sock_udp,
         pkt_ack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
         pkt.timestamp(get_timestamp());
         pkt.ackno(ackno++);
+
+        g_path_mut.lock();
         if (g_path.rtt != 0)
         {
             pkt.rtt(g_path.rtt);
             pkt.rttvar(g_path.rtt_var);
         }
+        g_path_mut.unlock();
 
         const int bytes_sent = sock_dst.send(pkt.const_buf());
 
@@ -71,6 +76,7 @@ void send_route(shared_udp sock_udp,
             continue;
         }
 
+        lock_guard<mutex> lck(g_path_mut);
         g_path.ack_records.store(pkt.ackno(), pkt.ackseqno());
     }
 }
@@ -87,6 +93,7 @@ void on_ctrl_ack(pkt_ack<const_bufv> ackpkt, socket_udp& sock_udp)
 
 void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt)
 {
+    lock_guard<mutex> lck(g_path_mut);
     const int rtt = g_path.ack_records.acknowledge(ackpkt.ackno());
 
     if (g_path.rtt == 0)
