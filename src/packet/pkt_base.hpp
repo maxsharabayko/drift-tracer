@@ -64,6 +64,8 @@ public:
 
 	ctrl_type control_type() const;
 
+	void control_type(ctrl_type type);
+
 	size_t length() const { return this->len_; }
 
 	void inline set_length(size_t len)
@@ -99,4 +101,10 @@ inline ctrl_type pkt_base<storage>::control_type() const
 	}
 
 	return ctrl_type::INVALID;
+}
+
+template<class storage>
+inline void pkt_base<storage>::control_type(ctrl_type type)
+{
+	pkt_view<storage>::template set_field<fld_ctrltype>(0x8000 | (unsigned) type);
 }
