@@ -10,6 +10,8 @@
 #include "ack_window.hpp"
 #include "utils.hpp"
 #include "path.hpp"
+#include "drift_tracer.hpp"
+#include "tsbpd.hpp"
 
 #include "buf_view.hpp"
 #include "packet/pkt_base.hpp"
@@ -28,10 +30,16 @@ using shared_udp = shared_ptr<socket_udp>;
 mutex g_path_mut;
 path_metrics g_path;
 const auto g_start_time = steady_clock::now();
+tsbpd g_tsbpd;
 
 unsigned int get_timestamp()
 {
     return duration_cast<microseconds>(steady_clock::now() - g_start_time).count();
+}
+
+void update_tsbpd_base(unsigned peer_timestamp)
+{
+    g_tsbpd.on_ackack(peer_timestamp);
 }
 
 /// @brief Sends ACK packets
@@ -54,7 +62,6 @@ void send_route(shared_udp sock_udp,
     {
         this_thread::sleep_for(10ms);
 
-        // TODO: Prepare a packet to send
         fill(buffer.begin(), buffer.end(), 0);
         pkt_ack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
         pkt.control_type(ctrl_type::ACK);
@@ -108,7 +115,9 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt)
         g_path.rtt_var = avg_rma<4, int>(g_path.rtt_var, abs(rtt - g_path.rtt));
         g_path.rtt = avg_rma<8>(g_path.rtt, rtt);
     }
-    spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}", rtt, g_path.rtt, g_path.rtt_var);
+
+    g_tsbpd.on_ackack(ackpkt.timestamp());
+    spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}, drift {}", rtt, g_path.rtt, g_path.rtt_var, g_tsbpd.drift());
 }
 
 /// @brief Receives packets from data receiver and forwards them over multiple links to data sender.
