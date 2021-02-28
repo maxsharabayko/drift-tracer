@@ -57,6 +57,7 @@ void send_route(shared_udp sock_udp,
         // TODO: Prepare a packet to send
         fill(buffer.begin(), buffer.end(), 0);
         pkt_ack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
+        pkt.control_type(ctrl_type::ACK);
         pkt.timestamp(get_timestamp());
         pkt.ackno(ackno++);
 
@@ -85,6 +86,7 @@ void on_ctrl_ack(pkt_ack<const_bufv> ackpkt, socket_udp& sock_udp)
 {
     array<unsigned char, 40> buffer = {};
     pkt_ackack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
+    pkt.control_type(ctrl_type::ACKACK);
     pkt.timestamp(get_timestamp());
     pkt.ackno(ackpkt.ackno());
 
@@ -106,6 +108,7 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt)
         g_path.rtt_var = avg_rma<4, int>(g_path.rtt_var, abs(rtt - g_path.rtt));
         g_path.rtt = avg_rma<8>(g_path.rtt, rtt);
     }
+    spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}", rtt, g_path.rtt, g_path.rtt_var);
 }
 
 /// @brief Receives packets from data receiver and forwards them over multiple links to data sender.
@@ -145,7 +148,7 @@ void feedback_route(shared_udp src,
         const auto ctrl_pkt_type = pkt.control_type();
         if (ctrl_pkt_type == ctrl_type::ACK)
         {
-            const int bytes_sent = sock_src.send(pkt_buf);
+            on_ctrl_ack(pkt, sock_src);
         }
         else if (ctrl_pkt_type == ctrl_type::ACKACK)
         {
