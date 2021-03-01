@@ -31,12 +31,14 @@ public:
     /// Write an ACK record into the window.
     /// @param [in] ackno     ACK packet no.
     /// @param [in] pktseqno  packer number of a packet being acknowledged
-    void store(int32_t ackno, int32_t pktseqno);
+    /// @param [in] send_time time when ACKACK was received
+    void store(int32_t ackno, int32_t pktseqno, const std::chrono::steady_clock::time_point& send_time);
 
-    /// Search the ACK-2 "seq" in the window, find out the DATA "ack" and caluclate RTT .
+    /// Search the ACK-2 "seq" in the window, find out the DATA "ack" and calculate RTT.
     /// @param [in] seq ACK-2 seq. no.
+    /// @param [in] recv_time time when ACKACK was received
     /// @return RTT.
-    int acknowledge(int32_t ackno);
+    int acknowledge(int32_t ackno, const std::chrono::steady_clock::time_point& recv_time);
 
 private:
 
@@ -46,13 +48,12 @@ private:
 
 };
 
-
 template<size_t SIZE>
-inline void ack_window<SIZE>::store(int32_t ackno, int32_t pktseqno)
+inline void ack_window<SIZE>::store(int32_t ackno, int32_t pktseqno, const std::chrono::steady_clock::time_point& send_time)
 {
     records_[latest_idx].ackno = ackno;
     records_[latest_idx].pktseqno = pktseqno;
-    records_[latest_idx].sendtime = std::chrono::steady_clock::now();
+    records_[latest_idx].sendtime = send_time;
 
     latest_idx = (latest_idx + 1) % SIZE;
 
@@ -62,7 +63,7 @@ inline void ack_window<SIZE>::store(int32_t ackno, int32_t pktseqno)
 }
 
 template<size_t SIZE>
-inline int ack_window<SIZE>::acknowledge(int32_t ackno)
+inline int ack_window<SIZE>::acknowledge(int32_t ackno, const std::chrono::steady_clock::time_point& recv_time)
 {
     using namespace std::chrono;
     int32_t pktseqno = SRT_SEQNO_NONE; // TODO: consider returning as a pair. Unused now.
@@ -80,7 +81,7 @@ inline int ack_window<SIZE>::acknowledge(int32_t ackno)
                 pktseqno = records_[i].pktseqno;
 
                 // calculate RTT
-                const int rtt = (int) duration_cast<microseconds>(steady_clock::now() - records_[i].sendtime).count();
+                const int rtt = (int) duration_cast<microseconds>(recv_time - records_[i].sendtime).count();
 
                 if (i + 1 == latest_idx)
                 {
@@ -109,7 +110,7 @@ inline int ack_window<SIZE>::acknowledge(int32_t ackno)
             pktseqno = records_[j].pktseqno;
 
             // calculate RTT
-            const int rtt = (int) duration_cast<microseconds>(steady_clock::now() - records_[j].sendtime).count();
+            const int rtt = (int) duration_cast<microseconds>(recv_time - records_[j].sendtime).count();
 
             if (j == latest_idx)
             {
