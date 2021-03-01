@@ -76,6 +76,7 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
         g_path_mut.unlock();
 
         const int bytes_sent = sock_dst.send(pkt.const_buf());
+        const auto send_time = steady_clock::now(); // record time as close to sending as possible
 
         if (bytes_sent != pkt.length())
         {
@@ -84,7 +85,7 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
         }
 
         lock_guard<mutex> lck(g_path_mut);
-        g_path.ack_records.store(pkt.ackno(), pkt.ackseqno());
+        g_path.ack_records.store(pkt.ackno(), pkt.ackseqno(), send_time);
     }
 }
 
@@ -101,10 +102,10 @@ void on_ctrl_ack(pkt_ack<const_bufv> ackpkt, socket_udp& sock_udp)
     const int bytes_sent = sock_udp.send(pkt.const_buf());
 }
 
-void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt)
+void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_point& recv_time)
 {
     lock_guard<mutex> lck(g_path_mut);
-    const int rtt = g_path.ack_records.acknowledge(ackpkt.ackno());
+    const int rtt = g_path.ack_records.acknowledge(ackpkt.ackno(), recv_time);
 
     if (g_path.rtt == 0)
     {
@@ -146,6 +147,7 @@ void ack_reply_loop(shared_udp src, const atomic_bool& force_break)
     {
         // TODO: Save timepoint as close to packet reception as possible
         const auto [bytes_read, src_addr] = sock_src.recvfrom(mut_bufv(buffer.data(), buffer.size()), -1);
+        const auto recv_time = steady_clock::now();
 
         if (bytes_read == 0)
         {
@@ -169,7 +171,7 @@ void ack_reply_loop(shared_udp src, const atomic_bool& force_break)
         }
         else if (ctrl_pkt_type == ctrl_type::ACKACK)
         {
-            on_ctrl_ackack(pkt);
+            on_ctrl_ackack(pkt, recv_time);
         }
     }
 }
