@@ -9,6 +9,7 @@
 struct config
 {
     int message_size = 1456;
+    std::string statsfile;
 };
 
 

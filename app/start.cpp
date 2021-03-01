@@ -12,6 +12,7 @@
 #include "path.hpp"
 #include "drift_tracer.hpp"
 #include "tsbpd.hpp"
+#include "stats_logger.hpp"
 
 #include "buf_view.hpp"
 #include "packet/pkt_base.hpp"
@@ -32,6 +33,8 @@ path_metrics g_path;
 const auto g_start_time = steady_clock::now();
 tsbpd g_tsbpd;
 
+unique_ptr<stats_logger> g_stats_logger;
+
 unsigned int get_timestamp()
 {
     return duration_cast<microseconds>(steady_clock::now() - g_start_time).count();
@@ -42,17 +45,13 @@ void update_tsbpd_base(unsigned peer_timestamp)
     g_tsbpd.on_ackack(peer_timestamp);
 }
 
-/// @brief Sends ACK packets
-/// @param srcs 
-/// @param dst 
-/// @param cfg 
-/// @param desc 
-/// @param force_break 
-void send_route(shared_udp sock_udp,
-    const config& cfg, const atomic_bool& force_break)
+/// @brief Sends ACK packets every 10 ms
+/// @param sock_udp UDP socket to use for ACK sending
+/// @param force_break a flag to check in case app wants to close itself
+void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
 {
-    vector<unsigned char> buffer(cfg.message_size);
-
+    const size_t mtu_size = 1500;
+    vector<unsigned char> buffer(mtu_size);
     socket_udp& sock_dst = *sock_udp.get();
 
     spdlog::info(LOG_SC_RECV "SND Started");
@@ -80,7 +79,7 @@ void send_route(shared_udp sock_udp,
 
         if (bytes_sent != pkt.length())
         {
-            spdlog::info("SND send returned {} bytes, expected {}", bytes_sent, pkt.length());
+            spdlog::warn("SND send returned {} bytes, expected {}", bytes_sent, pkt.length());
             continue;
         }
 
@@ -96,6 +95,8 @@ void on_ctrl_ack(pkt_ack<const_bufv> ackpkt, socket_udp& sock_udp)
     pkt.control_type(ctrl_type::ACKACK);
     pkt.timestamp(get_timestamp());
     pkt.ackno(ackpkt.ackno());
+
+    // TODO: Extract RTT and RTTVar
 
     const int bytes_sent = sock_udp.send(pkt.const_buf());
 }
@@ -116,20 +117,26 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt)
         g_path.rtt = avg_rma<8>(g_path.rtt, rtt);
     }
 
-    g_tsbpd.on_ackack(ackpkt.timestamp());
-    spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}, drift {}", rtt, g_path.rtt, g_path.rtt_var, g_tsbpd.drift());
+    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp());
+
+    if (g_stats_logger)
+    {
+        g_stats_logger->trace(rtt, g_path.rtt, g_path.rtt_var, drift_sample,
+            g_tsbpd.drift(), g_tsbpd.overdrift(), g_tsbpd.get_time_base());
+    }
+    else
+    {
+        spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}, drift {}", rtt, g_path.rtt, g_path.rtt_var, g_tsbpd.drift());
+    }
 }
 
 /// @brief Receives packets from data receiver and forwards them over multiple links to data sender.
-/// @param srcs 
-/// @param dst 
-/// @param cfg 
-/// @param desc 
-/// @param force_break 
-void feedback_route(shared_udp src,
-    const config& cfg, const atomic_bool& force_break)
+/// @param src source UDP socket
+/// @param force_break a flag to break the loop and return from the function
+void ack_reply_loop(shared_udp src, const atomic_bool& force_break)
 {
-    vector<unsigned char> buffer(cfg.message_size);
+    const size_t mtu_size = 1500;
+    vector<unsigned char> buffer(mtu_size);
 
     socket_udp& sock_src = *src.get();
 
@@ -137,6 +144,7 @@ void feedback_route(shared_udp src,
 
     while (!force_break)
     {
+        // TODO: Save timepoint as close to packet reception as possible
         const auto [bytes_read, src_addr] = sock_src.recvfrom(mut_bufv(buffer.data(), buffer.size()), -1);
 
         if (bytes_read == 0)
@@ -196,10 +204,21 @@ void run(const string& sock_url,
         return;
     }
 
-    
-    future<void> fb_route = ::async(::launch::async, feedback_route, sock_udp, cfg, ref(force_break));
+    if (!cfg.statsfile.empty())
+    {
+        try {
+            g_stats_logger = make_unique<stats_logger>(cfg.statsfile);
+        }
+        catch (const runtime_error& e)
+        {
+            spdlog::error(e.what());
+            return;
+        }
+    }
 
-    send_route(sock_udp, cfg, force_break);
+    future<void> fb_route = ::async(::launch::async, ack_reply_loop, sock_udp, ref(force_break));
+
+    ack_sending_loop(sock_udp, force_break);
 
     fb_route.wait();
 }
@@ -208,6 +227,7 @@ CLI::App* add_subcommand(CLI::App& app, config& cfg, string& sock_url)
 {
     CLI::App* sc_route = app.add_subcommand("start", "Start exchange")->fallthrough();
     sc_route->add_option("sock_url", sock_url, "Source URI")->expected(1);
+    sc_route->add_option("--tracefile", cfg.statsfile, "Trace output file");
 
     return sc_route;
 }
