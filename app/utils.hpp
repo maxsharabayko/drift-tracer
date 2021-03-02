@@ -100,9 +100,9 @@ inline struct tm sys_local_time(time_t tt)
     struct tm tms;
     memset(&tms, 0, sizeof tms);
 #ifdef _WIN32
-	errno_t rr = localtime_s(&tms, &tt);
-	if (rr == 0)
-		return tms;
+    errno_t rr = localtime_s(&tms, &tt);
+    if (rr == 0)
+        return tms;
 #else
 
     // Ignore the error, state that if something
