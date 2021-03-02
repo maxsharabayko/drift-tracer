@@ -40,11 +40,6 @@ unsigned int get_timestamp()
     return duration_cast<microseconds>(steady_clock::now() - g_start_time).count();
 }
 
-void update_tsbpd_base(unsigned peer_timestamp)
-{
-    g_tsbpd.on_ackack(peer_timestamp);
-}
-
 /// @brief Sends ACK packets every 10 ms
 /// @param sock_udp UDP socket to use for ACK sending
 /// @param force_break a flag to check in case app wants to close itself
@@ -118,7 +113,7 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_poin
         g_path.rtt = avg_rma<8>(g_path.rtt, rtt);
     }
 
-    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp());
+    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp(), rtt);
 
     if (g_stats_logger)
     {

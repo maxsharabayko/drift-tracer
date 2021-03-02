@@ -11,17 +11,18 @@ class tsbpd
 {
 public:
     /// @returns current drift sample
-    long long on_ackack(unsigned timestamp_us)
+    long long on_ackack(unsigned timestamp_us, int rtt_us)
     {
         if (m_tsTsbPdTimeBase == std::chrono::steady_clock::time_point())
         {
             m_tsTsbPdTimeBase = std::chrono::steady_clock::now() - microseconds_from(timestamp_us);
+            m_first_rtt_us = rtt_us;
             return 0;
         }
 
         const std::chrono::steady_clock::duration drift =
             std::chrono::steady_clock::now() - (get_time_base(timestamp_us) + microseconds_from(timestamp_us));
-        const long long drift_us = count_microseconds(drift);
+        const long long drift_us = count_microseconds(drift) - (rtt_us - m_first_rtt_us) / 2;
         const bool updated = m_drift_tracer.update(drift_us);
         if (updated)
         {
@@ -63,5 +64,6 @@ private:
     // calculation of all these things above.
 
     bool m_bTsbPdWrapCheck = false;              // true: check packet time stamp wrap around
+    int m_first_rtt_us = 0;
     static const uint32_t TSBPD_WRAP_PERIOD = (30*1000000);    //30 seconds (in usec)
 };
