@@ -57,60 +57,60 @@ atomic_bool force_break(false);
 
 void OnINT_ForceExit(int)
 {
-	cerr << "\n-------- REQUESTED INTERRUPT!\n";
-	force_break = true;
+    cerr << "\n-------- REQUESTED INTERRUPT!\n";
+    force_break = true;
 }
 
 struct NetworkInit
 {
-	NetworkInit()
-	{
-		// This is mainly required on Windows to initialize the network system,
-		// for a case when the instance would use UDP. SRT does it on its own, independently.
-		if (!SysInitializeNetwork())
-			throw std::runtime_error("Can't initialize network!");
-	}
+    NetworkInit()
+    {
+        // This is mainly required on Windows to initialize the network system,
+        // for a case when the instance would use UDP. SRT does it on its own, independently.
+        if (!SysInitializeNetwork())
+            throw std::runtime_error("Can't initialize network!");
+    }
 
-	// Symmetrically, this does a cleanup; put into a local destructor to ensure that
-	// it's called regardless of how this function returns.
-	~NetworkInit()
-	{
-		SysCleanupNetwork();
-	}
+    // Symmetrically, this does a cleanup; put into a local destructor to ensure that
+    // it's called regardless of how this function returns.
+    ~NetworkInit()
+    {
+        SysCleanupNetwork();
+    }
 };
 
 
 int main(int argc, char **argv)
 {
-	CLI::App app("Drift Tracer tool.");
-	app.set_config("--config");
-	app.set_help_all_flag("--help-all", "Expand all help");
+    CLI::App app("Drift Tracer tool.");
+    app.set_config("--config");
+    app.set_help_all_flag("--help-all", "Expand all help");
 
-	spdlog::set_pattern("%H:%M:%S.%f %^[%L]%$ %v");
-	app.add_flag_function("--verbose,-v", [](size_t) {
-			spdlog::set_level(spdlog::level::trace);
-		}, "enable verbose output");
+    spdlog::set_pattern("%H:%M:%S.%f %^[%L]%$ %v");
+    app.add_flag_function("--verbose,-v", [](size_t) {
+            spdlog::set_level(spdlog::level::trace);
+        }, "enable verbose output");
 
-	app.add_flag_function("--handle-sigint", [](size_t) {
-			signal(SIGINT, OnINT_ForceExit);
-			signal(SIGTERM, OnINT_ForceExit);
-		}, "Handle Ctrl+C interrupt");
+    app.add_flag_function("--handle-sigint", [](size_t) {
+            signal(SIGINT, OnINT_ForceExit);
+            signal(SIGTERM, OnINT_ForceExit);
+        }, "Handle Ctrl+C interrupt");
 
 
-	CLI::App* cmd_version = app.add_subcommand("version", "Show version info")
-		->callback([]() { cerr << "Version 0.0.1\n"; });
+    CLI::App* cmd_version = app.add_subcommand("version", "Show version info")
+        ->callback([]() { cerr << "Version 0.0.1\n"; });
 
-	string url;
+    string url;
     config cfg;
     CLI::App* sc_send = add_subcommand(app, cfg, url);
 
-	app.require_subcommand(1);
-	CLI11_PARSE(app, argc, argv);
+    app.require_subcommand(1);
+    CLI11_PARSE(app, argc, argv);
 
-	// Startup and cleanup network sockets library
-	const NetworkInit nwobject;
+    // Startup and cleanup network sockets library
+    const NetworkInit nwobject;
 
-	if (sc_send->parsed())
+    if (sc_send->parsed())
     {
         run(url, cfg, force_break);
         return 0;
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
         cerr << "Failed to recognize subcommand" << endl;
     }
 
-	return 0;
+    return 0;
 }
 
 

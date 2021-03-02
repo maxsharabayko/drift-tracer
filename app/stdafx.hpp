@@ -2,11 +2,13 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <cinttypes>
 
 #include <chrono>
 #include <fstream>
 #include <cmath>
+
 #include <iomanip>
 #include <mutex>
 
