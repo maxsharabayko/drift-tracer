@@ -24,7 +24,7 @@ public:
     }
 
     void trace(const steady_clock::duration& elapsed_std, const system_clock::duration& elapsed_sys,
-        unsigned ackack_timestamp, int rtt_sys, int rtt_std, int rtt_std_rma, int rtt_std_var,
+        unsigned ackack_timestamp_std, unsigned ackack_timestamp_sys, int rtt_sys, int rtt_std, int rtt_std_rma, int rtt_std_var,
         int64_t drift_sample_std, int64_t drift, int64_t overdrift,
         const std::chrono::steady_clock::time_point& tsbpd_base)
     {
@@ -34,7 +34,8 @@ public:
         this->fout_ << print_timestamp() << ",";
         this->fout_ << duration_cast<microseconds>(elapsed_std).count() << ",";
         this->fout_ << duration_cast<microseconds>(elapsed_sys).count() << ",";
-        this->fout_ << ackack_timestamp << ",";
+        this->fout_ << ackack_timestamp_std << ",";
+        this->fout_ << ackack_timestamp_sys << ",";
         this->fout_ << rtt_sys << ",";
         this->fout_ << rtt_std << ",";
         this->fout_ << rtt_std_rma << ",";
@@ -50,7 +51,8 @@ private:
     void print_header()
     {
         //std::lock_guard<std::mutex> lck(this->mtx_);
-        this->fout_ << "TimepointSys,usElapsedStd,usElapsedSys,usAckAckTimestamp,usRttSys,usRTTStd,usRTTStdRma,RTTStdVar,usDriftSampleStd,usDriftStd,usOverdriftStd,TSBPDBase\n";
+        this->fout_ << "TimepointSys,usElapsedStd,usElapsedSys,usAckAckTimestampStd,usAckAckTimestampSys,";
+        this->fout_ << "usRttSys, usRTTStd, usRTTStdRma, RTTStdVar, usDriftSampleStd, usDriftStd, usOverdriftStd, TSBPDBase\n";
     }
 
 private:

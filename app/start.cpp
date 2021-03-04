@@ -37,9 +37,14 @@ tsbpd g_tsbpd;
 
 unique_ptr<stats_logger> g_stats_logger;
 
-unsigned int get_timestamp()
+unsigned int get_timestamp_std()
 {
     return (unsigned int) duration_cast<microseconds>(steady_clock::now() - g_start_time_std).count();
+}
+
+unsigned int get_timestamp_sys()
+{
+    return (unsigned int)duration_cast<microseconds>(system_clock::now() - g_start_time_sys).count();
 }
 
 /// @brief Sends ACK packets every 10 ms
@@ -61,7 +66,7 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
         fill(buffer.begin(), buffer.end(), 0);
         pkt_ack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
         pkt.control_type(ctrl_type::ACK);
-        pkt.timestamp(get_timestamp());
+        pkt.timestamp(get_timestamp_std());
         pkt.ackno(ackno++);
 
         g_path_mut.lock();
@@ -92,8 +97,9 @@ void on_ctrl_ack(pkt_ack<const_bufv> ackpkt, socket_udp& sock_udp)
     array<unsigned char, 40> buffer = {};
     pkt_ackack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
     pkt.control_type(ctrl_type::ACKACK);
-    pkt.timestamp(get_timestamp());
+    pkt.timestamp(get_timestamp_std());
     pkt.ackno(ackpkt.ackno());
+    pkt.timestamp_sys(get_timestamp_sys());
 
     // TODO: Extract RTT and RTTVar
 
@@ -120,7 +126,7 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_poin
 
     if (g_stats_logger)
     {
-        g_stats_logger->trace(recv_time_std - g_start_time_std, recv_time_sys - g_start_time_sys, ackpkt.timestamp(),
+        g_stats_logger->trace(recv_time_std - g_start_time_std, recv_time_sys - g_start_time_sys, ackpkt.timestamp(), ackpkt.timestamp_sys(),
             rtt_pair.rtt_sys, rtt_pair.rtt_std, g_path.rtt, g_path.rtt_var, drift_sample,
             g_tsbpd.drift(), g_tsbpd.overdrift(), g_tsbpd.get_time_base());
     }
