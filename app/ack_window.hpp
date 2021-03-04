@@ -7,6 +7,8 @@ static const int32_t SRT_SEQNO_NONE = -1;    // -1: no seq (0 is a valid seqno!)
 template <size_t SIZE>
 class ack_window
 {
+    using steady_clock = std::chrono::steady_clock;
+    using system_clock = std::chrono::system_clock;
 public:
     ack_window() :
         records_(),
@@ -25,20 +27,30 @@ public:
     {
         int32_t ackno;       // Seq. No. for the ACK packet
         int32_t pktseqno;    // Data Seq. No. carried by the ACK packet
-        std::chrono::steady_clock::time_point sendtime; // The timestamp when the ACK was sent further
+        steady_clock::time_point sendtime_std; // The timestamp when the ACK was sent further (steady clock)
+        system_clock::time_point sendtime_sys; // The timestamp when the ACK was sent further (system clock)
     };
 
     /// Write an ACK record into the window.
-    /// @param [in] ackno     ACK packet no.
-    /// @param [in] pktseqno  packer number of a packet being acknowledged
-    /// @param [in] send_time time when ACKACK was received
-    void store(int32_t ackno, int32_t pktseqno, const std::chrono::steady_clock::time_point& send_time);
+    /// @param [in] ackno         ACK packet no.
+    /// @param [in] pktseqno      packer number of a packet being acknowledged
+    /// @param [in] send_time_std time when ACK was sent (steady clock)
+    /// @param [in] send_time_sys time when ACK was sent (system clock)
+    void store(int32_t ackno, int32_t pktseqno, const steady_clock::time_point& send_time_std, const system_clock::time_point& send_time_sys);
+
+    struct rtt_pair
+    {
+        int rtt_std;
+        int rtt_sys;
+    };
 
     /// Search the ACK-2 "seq" in the window, find out the DATA "ack" and calculate RTT.
     /// @param [in] seq ACK-2 seq. no.
-    /// @param [in] recv_time time when ACKACK was received
+    /// @param [in] recv_time_std time when ACKACK was received (steady clock)
+    /// @param [in] recv_time_sys time when ACKACK was received (system clock)
     /// @return RTT.
-    int acknowledge(int32_t ackno, const std::chrono::steady_clock::time_point& recv_time);
+    rtt_pair acknowledge(int32_t ackno, const std::chrono::steady_clock::time_point& recv_time_std,
+        const std::chrono::system_clock::time_point& recv_time_sys);
 
 private:
 
@@ -49,11 +61,13 @@ private:
 };
 
 template<size_t SIZE>
-inline void ack_window<SIZE>::store(int32_t ackno, int32_t pktseqno, const std::chrono::steady_clock::time_point& send_time)
+inline void ack_window<SIZE>::store(int32_t ackno, int32_t pktseqno, const std::chrono::steady_clock::time_point& send_time_std,
+    const std::chrono::system_clock::time_point& send_time_sys)
 {
     records_[latest_idx].ackno = ackno;
     records_[latest_idx].pktseqno = pktseqno;
-    records_[latest_idx].sendtime = send_time;
+    records_[latest_idx].sendtime_std = send_time_std;
+    records_[latest_idx].sendtime_sys = send_time_sys;
 
     latest_idx = (latest_idx + 1) % SIZE;
 
@@ -62,8 +76,13 @@ inline void ack_window<SIZE>::store(int32_t ackno, int32_t pktseqno, const std::
         oldest_idx = (oldest_idx + 1) % SIZE;
 }
 
+// C++11 Standard Section 14.6 Name Resolution:
+// A name used in a template declaration or definition and that is dependent on a template-parameter is assumed not to name a type
+// unless the applicable name lookup finds a type name or the name is qualified by the keyword typename.
 template<size_t SIZE>
-inline int ack_window<SIZE>::acknowledge(int32_t ackno, const std::chrono::steady_clock::time_point& recv_time)
+inline typename ack_window<SIZE>::rtt_pair ack_window<SIZE>::acknowledge(int32_t ackno,
+    const std::chrono::steady_clock::time_point& recv_time_std,
+    const std::chrono::system_clock::time_point& recv_time_sys)
 {
     using namespace std::chrono;
     int32_t pktseqno = SRT_SEQNO_NONE; // TODO: consider returning as a pair. Unused now.
@@ -81,7 +100,8 @@ inline int ack_window<SIZE>::acknowledge(int32_t ackno, const std::chrono::stead
                 pktseqno = records_[i].pktseqno;
 
                 // calculate RTT
-                const int rtt = (int) duration_cast<microseconds>(recv_time - records_[i].sendtime).count();
+                const int rtt_std = (int) duration_cast<microseconds>(recv_time_std - records_[i].sendtime_std).count();
+                const int rtt_sys = (int) duration_cast<microseconds>(recv_time_sys - records_[i].sendtime_sys).count();
 
                 if (i + 1 == latest_idx)
                 {
@@ -91,12 +111,12 @@ inline int ack_window<SIZE>::acknowledge(int32_t ackno, const std::chrono::stead
                 else
                     oldest_idx = (i + 1) % SIZE;
 
-                return rtt;
+                return { rtt_std, rtt_sys };
             }
         }
 
         // Bad input, the ACK node has been overwritten
-        return -1;
+        return { -1, -1 };
     }
 
     // Head has exceeded the physical window boundary, so it is behind tail
@@ -110,7 +130,8 @@ inline int ack_window<SIZE>::acknowledge(int32_t ackno, const std::chrono::stead
             pktseqno = records_[j].pktseqno;
 
             // calculate RTT
-            const int rtt = (int) duration_cast<microseconds>(recv_time - records_[j].sendtime).count();
+            const int rtt_std = (int) duration_cast<microseconds>(recv_time_std - records_[j].sendtime_std).count();
+            const int rtt_sys = (int)duration_cast<microseconds>(recv_time_sys - records_[j].sendtime_sys).count();
 
             if (j == latest_idx)
             {
@@ -120,10 +141,10 @@ inline int ack_window<SIZE>::acknowledge(int32_t ackno, const std::chrono::stead
             else
                 oldest_idx = (j + 1) % SIZE;
 
-            return rtt;
+            return { rtt_std, rtt_sys };
         }
     }
 
     // bad input, the ACK node has been overwritten
-    return -1;
+    return { -1, -1 };
 }

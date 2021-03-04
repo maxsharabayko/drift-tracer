@@ -30,14 +30,16 @@ using shared_udp = shared_ptr<socket_udp>;
 
 mutex g_path_mut;
 path_metrics g_path;
-const auto g_start_time = steady_clock::now();
+const auto g_start_time_std = steady_clock::now();
+const auto g_start_time_sys = system_clock::now();
+auto g_stats_time = steady_clock::now();
 tsbpd g_tsbpd;
 
 unique_ptr<stats_logger> g_stats_logger;
 
 unsigned int get_timestamp()
 {
-    return duration_cast<microseconds>(steady_clock::now() - g_start_time).count();
+    return (unsigned int) duration_cast<microseconds>(steady_clock::now() - g_start_time_std).count();
 }
 
 /// @brief Sends ACK packets every 10 ms
@@ -71,7 +73,8 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
         g_path_mut.unlock();
 
         const int bytes_sent = sock_dst.send(pkt.const_buf());
-        const auto send_time = steady_clock::now(); // record time as close to sending as possible
+        const auto send_time_std = steady_clock::now(); // record time as close to sending as possible
+        const auto send_time_sys = system_clock::now();
 
         if (bytes_sent != pkt.length())
         {
@@ -80,7 +83,7 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
         }
 
         lock_guard<mutex> lck(g_path_mut);
-        g_path.ack_records.store(pkt.ackno(), pkt.ackseqno(), send_time);
+        g_path.ack_records.store(pkt.ackno(), pkt.ackseqno(), send_time_std, send_time_sys);
     }
 }
 
@@ -97,39 +100,41 @@ void on_ctrl_ack(pkt_ack<const_bufv> ackpkt, socket_udp& sock_udp)
     const int bytes_sent = sock_udp.send(pkt.const_buf());
 }
 
-void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_point& recv_time)
+void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_point& recv_time_std, const system_clock::time_point& recv_time_sys, const config& cfg)
 {
     lock_guard<mutex> lck(g_path_mut);
-    const int rtt = g_path.ack_records.acknowledge(ackpkt.ackno(), recv_time);
+    const auto rtt_pair = g_path.ack_records.acknowledge(ackpkt.ackno(), recv_time_std, recv_time_sys);
 
     if (g_path.rtt == 0)
     {
-        g_path.rtt = rtt;
-        g_path.rtt_var = rtt / 2;
+        g_path.rtt = rtt_pair.rtt_std;
+        g_path.rtt_var = rtt_pair.rtt_std / 2;
     }
     else
     {
-        g_path.rtt_var = avg_rma<4, int>(g_path.rtt_var, abs(rtt - g_path.rtt));
-        g_path.rtt = avg_rma<8>(g_path.rtt, rtt);
+        g_path.rtt_var = avg_rma<4, int>(g_path.rtt_var, abs(rtt_pair.rtt_std - g_path.rtt));
+        g_path.rtt = avg_rma<8>(g_path.rtt, rtt_pair.rtt_std);
     }
 
-    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp(), rtt);
+    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp(), cfg.compensate_rtt ? rtt_pair.rtt_std : 0);
 
     if (g_stats_logger)
     {
-        g_stats_logger->trace(rtt, g_path.rtt, g_path.rtt_var, drift_sample,
+        g_stats_logger->trace(recv_time_std - g_start_time_std, recv_time_sys - g_start_time_sys, ackpkt.timestamp(),
+            rtt_pair.rtt_sys, rtt_pair.rtt_std, g_path.rtt, g_path.rtt_var, drift_sample,
             g_tsbpd.drift(), g_tsbpd.overdrift(), g_tsbpd.get_time_base());
     }
-    else
+    else if (steady_clock::now() > g_stats_time)
     {
-        spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}, drift {}", rtt, g_path.rtt, g_path.rtt_var, g_tsbpd.drift());
+        spdlog::info("Estimated RTT {}, RTT rma {}, RTT var {}, drift {}", rtt_pair.rtt_std, g_path.rtt, g_path.rtt_var, g_tsbpd.drift());
+        g_stats_time = steady_clock::now() + 1s;
     }
 }
 
 /// @brief Receives packets from data receiver and forwards them over multiple links to data sender.
 /// @param src source UDP socket
 /// @param force_break a flag to break the loop and return from the function
-void ack_reply_loop(shared_udp src, const atomic_bool& force_break)
+void ack_reply_loop(shared_udp src, const atomic_bool& force_break, const config& cfg)
 {
     const size_t mtu_size = 1500;
     vector<unsigned char> buffer(mtu_size);
@@ -142,7 +147,8 @@ void ack_reply_loop(shared_udp src, const atomic_bool& force_break)
     {
         // TODO: Save timepoint as close to packet reception as possible
         const auto [bytes_read, src_addr] = sock_src.recvfrom(mut_bufv(buffer.data(), buffer.size()), -1);
-        const auto recv_time = steady_clock::now();
+        const auto recv_time_std = steady_clock::now();
+        const auto recv_time_sys = system_clock::now();
 
         if (bytes_read == 0)
         {
@@ -166,7 +172,7 @@ void ack_reply_loop(shared_udp src, const atomic_bool& force_break)
         }
         else if (ctrl_pkt_type == ctrl_type::ACKACK)
         {
-            on_ctrl_ackack(pkt, recv_time);
+            on_ctrl_ackack(pkt, recv_time_std, recv_time_sys, cfg);
         }
     }
 }
@@ -213,7 +219,7 @@ void run(const string& sock_url,
         }
     }
 
-    future<void> fb_route = ::async(::launch::async, ack_reply_loop, sock_udp, ref(force_break));
+    future<void> fb_route = ::async(::launch::async, ack_reply_loop, sock_udp, ref(force_break), ref(cfg));
 
     ack_sending_loop(sock_udp, force_break);
 
@@ -225,6 +231,7 @@ CLI::App* add_subcommand(CLI::App& app, config& cfg, string& sock_url)
     CLI::App* sc_route = app.add_subcommand("start", "Start exchange")->fallthrough();
     sc_route->add_option("sock_url", sock_url, "Source URI")->expected(1);
     sc_route->add_option("--tracefile", cfg.statsfile, "Trace output file");
+    sc_route->add_flag("--compensatertt", cfg.compensate_rtt, "Compensate RTT variations in drift tracing");
 
     return sc_route;
 }
