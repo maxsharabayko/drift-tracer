@@ -1,0 +1,3 @@
+pandas>=1.0.0
+plotly
+git+https://github.com/mbakholdina/lib-tcpdump-processing.git@master#egg=tcpdump_processing
