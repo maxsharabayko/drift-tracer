@@ -111,6 +111,7 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_poin
     lock_guard<mutex> lck(g_path_mut);
     const auto rtt_pair = g_path.ack_records.acknowledge(ackpkt.ackno(), recv_time_std, recv_time_sys);
 
+    // TODO: rtt_pair can return -1
     if (g_path.rtt == 0)
     {
         g_path.rtt = rtt_pair.rtt_std;
@@ -122,7 +123,7 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_poin
         g_path.rtt = avg_rma<8>(g_path.rtt, rtt_pair.rtt_std);
     }
 
-    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp(), cfg.compensate_rtt ? rtt_pair.rtt_std : 0);
+    const long long drift_sample = g_tsbpd.on_ackack(ackpkt.timestamp(), cfg.compensate_rtt ? rtt_pair.rtt_std : 0, recv_time_std);
 
     if (g_stats_logger)
     {
