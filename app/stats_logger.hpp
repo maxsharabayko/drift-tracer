@@ -52,7 +52,7 @@ private:
     {
         //std::lock_guard<std::mutex> lck(this->mtx_);
         this->fout_ << "TimepointSys,usElapsedStd,usElapsedSys,usAckAckTimestampStd,usAckAckTimestampSys,";
-        this->fout_ << "usRttSys, usRTTStd, usRTTStdRma, RTTStdVar, usDriftSampleStd, usDriftStd, usOverdriftStd, TSBPDBase\n";
+        this->fout_ << "usRttSys,usRTTStd,usRTTStdRma,RTTStdVar,usDriftSampleStd,usDriftStd,usOverdriftStd,TSBPDBase\n";
     }
 
 private:
