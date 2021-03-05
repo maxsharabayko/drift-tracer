@@ -37,7 +37,7 @@ public:
 	/// 4 |                         Timestamp SYS                         |
 	///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	typedef pkt_field<uint32_t, 1 * 4> fld_ackno;
-	typedef pkt_field<uint32_t, 1 * 4> fld_timestamp_sys;
+	typedef pkt_field<uint32_t, 4 * 4> fld_timestamp_sys;
 
 public: // Getters
 	uint32_t ackno() const { return pkt_view<storage>::template get_field<fld_ackno>(); }
