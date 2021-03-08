@@ -26,11 +26,13 @@ public:
         m_qDriftSum += driftval;
         ++m_uDriftSpan;
 
-        if (m_uDriftSpan < MAX_SPAN)
-            return false;
-
+        // NOTE: In SRT this condition goes after if (m_uDriftSpan < MAX_SPAN).
+        // I moved it here to calculate accumulated overdrift.
         if (CLEAR_ON_UPDATE)
             m_qOverdrift = 0;
+
+        if (m_uDriftSpan < MAX_SPAN)
+            return false;
 
         // Calculate the median of all drift values.
         // In most cases, the divisor should be == MAX_SPAN.
