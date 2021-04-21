@@ -4,8 +4,7 @@ import plotly.express as px
 import plotly.io as pio
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-
-from typing import Final
+import click
 
 pio.templates.default = "plotly_white"
 
@@ -20,6 +19,7 @@ class drift_tracer:
         us_ackack_timestamp = df['usAckAckTimestamp' + self.remote_clock_suffix].iloc[0]
         self.tsbpd_base = us_elapsed - us_ackack_timestamp
         self.rtt_base = df['usRTT' + self.rtt_clock_suffix].iloc[0]
+        print(f'RTT base: {self.rtt_base}')
         self.tsbpd_wrap_check = False
         self.TSBPD_WRAP_PERIOD = (30*1000000)
         self.MAX_TIMESTAMP = 0xFFFFFFFF # Full 32 bit (01h11m35s)
@@ -46,25 +46,48 @@ class drift_tracer:
         df_drift = df_drift.rename(columns={elapsed_name : "usElapsed", timestamp_name : "usAckAckTimestamp", 'usDriftSampleStd' : 'usDriftSample'})
         df_drift['sTime'] = df_drift['usElapsed'] / 1000000
 
-        for index, row in df_drift.iterrows():
+        for i, row in df_drift.iterrows():
             rtt_correction = (row[rtt_name] - self.rtt_base) / 2;
-            row['usDriftSample'] = row['usElapsed'] - (self.get_time_base(row['usAckAckTimestamp']) + row['usAckAckTimestamp']) - rtt_correction
+            #print(f'RTT correction: {rtt_correction}')
+            df_drift.at[i, 'usDriftSample'] = row['usElapsed'] - (self.get_time_base(row['usAckAckTimestamp']) + row['usAckAckTimestamp']) - rtt_correction
 
         df_drift['usDriftRMA'] = df_drift['usDriftSample'].ewm(com=7, adjust=False).mean()
         return df_drift
 
 
-
-def main():
+@click.command()
+@click.argument(
+    'filepath',
+    type=click.Path(exists=True)
+)
+@click.option(
+    '--local-sys',
+    is_flag=True,
+    default=False,
+    help=   'Take local SYS clock.',
+    show_default=True
+)
+@click.option(
+    '--remote-sys',
+    is_flag=True,
+    default=False,
+    help=   'Take remote SYS clock.',
+    show_default=True
+)
+def main(filepath, local_sys, remote_sys):
     
-    df_driftlog  = pd.read_csv('win-centos-drift-rtt-change-trace-2.csv')
+    df_driftlog  = pd.read_csv(filepath)
 
-    tracer = drift_tracer(df_driftlog, False, False)
+    tracer = drift_tracer(df_driftlog, not local_sys, not remote_sys)
     df_drift = tracer.calculate_drift(df_driftlog)
+    print(df_drift)
 
+    df_driftlog['sTime'] = df_driftlog['usElapsedStd'] / 1000000
 
+    str_local_clock  = "SYS" if local_sys else "STD"
+    str_remote_clock = "SYS" if remote_sys else "STD"
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True)
-    fig.update_layout(title="Local SYS Remote SYS")
+    fig.update_layout(title=f'Local {str_local_clock} Remote {str_remote_clock}')
     fig.add_trace(go.Scatter(x=df_drift['sTime'], y=df_drift['usDriftSample'],
                     mode='lines+markers',
                     name='Drift Sample, us'),
