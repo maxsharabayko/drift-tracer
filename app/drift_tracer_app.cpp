@@ -8,12 +8,6 @@
 
 // Third party libraries
 #include "CLI/CLI.hpp"
-#ifndef SPDLOG_FMT_EXTERNAL
-#define SPDLOG_FMT_EXTERNAL
-#endif
-#ifndef SPDLOG_COMPILED_LIB
-#define SPDLOG_COMPILED_LIB
-#endif
 #include "spdlog/spdlog.h"
 
 #if _WIN32

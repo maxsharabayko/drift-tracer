@@ -8,6 +8,12 @@ target_include_directories(drift-tracer PRIVATE
 	${CMAKE_SOURCE_DIR}/src
 )
 
+target_compile_definitions(drift-tracer
+	PUBLIC
+	SPDLOG_COMPILED_LIB
+	SPDLOG_FMT_EXTERNAL
+)
+
 target_link_libraries(drift-tracer
 	PRIVATE CONAN_PKG::cli11
 	PRIVATE CONAN_PKG::spdlog
