@@ -24,3 +24,20 @@ $ cmake --build . --config Release
 $ cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 $ cmake --build .
 ```
+
+## Usage
+
+Collecting drift trace logs on two machines: A and B.
+
+```shell
+(A)
+drift-tracer start udp://192.168.0.7:4200?bind=192.168.0.10:4200 --tracefile drift-trace-a.csv
+(B)
+drift-tracer start udp://192.168.0.10:4200?bind=192.168.0.7:4200 --tracefile drift-trace-b.csv
+```
+
+The URI must provide remote IP and port, and local IP and port to bind UDP socket to.
+
+```shell
+udp://remote_ip:remote:port?bind=local_ip:local_port
+```
