@@ -81,6 +81,7 @@ socket_udp::socket_udp(const UriParser &src_uri)
 	: m_host(src_uri.host())
 	, m_port(src_uri.portno())
 	, m_options(src_uri.parameters())
+	, m_dst_addr(sockaddr_any())
 {
 	sockaddr_in sa     = sockaddr_in();
 	sa.sin_family      = AF_INET;
