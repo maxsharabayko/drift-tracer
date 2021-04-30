@@ -150,7 +150,7 @@ socket_udp::socket_udp(const UriParser &src_uri)
 	if (m_host != "" || ip_bonded)
 	{
 		m_dst_addr = sa_requested;
-		spdlog::info("{}, destination address {}", ip_bonded ? "Bound" : "Not bound", m_dst_addr.str());
+		spdlog::info("{}, destination address {}", ip_bonded ? "Bound" : "Not bound", m_dst_addr.load().str());
 	}
 	else
 	{

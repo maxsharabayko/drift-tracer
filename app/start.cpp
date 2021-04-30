@@ -55,6 +55,7 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
     const size_t mtu_size = 1500;
     vector<unsigned char> buffer(mtu_size);
     socket_udp& sock_dst = *sock_udp.get();
+    auto last_msg_time = steady_clock::now(); // Allows tracking "no remote IP" log message frequency.
 
     spdlog::info(LOG_SC_RECV "SND Started");
 
@@ -62,6 +63,17 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
     while (!force_break)
     {
         this_thread::sleep_for(10ms);
+
+        if (sock_dst.dst_addr().empty())
+        {
+            const auto tnow = steady_clock::now();
+            if (tnow - last_msg_time > 1s)
+            {
+                spdlog::info(LOG_SC_RECV "SND: don't know remote yet, waiting for incoming ACK.");
+                last_msg_time = tnow;
+            }
+            continue;
+        }
 
         fill(buffer.begin(), buffer.end(), 0);
         pkt_ack<mut_bufv> pkt(mut_bufv(buffer.data(), buffer.size()));
@@ -175,6 +187,12 @@ void ack_reply_loop(shared_udp src, const atomic_bool& force_break, const config
         const auto ctrl_pkt_type = pkt.control_type();
         if (ctrl_pkt_type == ctrl_type::ACK)
         {
+            if (sock_src.dst_addr().empty())
+            {
+                sock_src.set_dst_addr(src_addr);
+                spdlog::info(LOG_SC_RECV "RCV Got incoming ACK, set target to {}", src_addr.str());
+            }
+    
             on_ctrl_ack(pkt, sock_src);
         }
         else if (ctrl_pkt_type == ctrl_type::ACKACK)

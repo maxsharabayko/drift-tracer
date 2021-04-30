@@ -34,6 +34,7 @@ public:
 
 	sockaddr_any get_sockaddr() const;
 	sockaddr_any dst_addr() const { return m_dst_addr; }
+	void set_dst_addr(const sockaddr_any& addr) { m_dst_addr = addr; }
 
 public:
 	/**
@@ -51,7 +52,7 @@ public:
 private:
 	SOCKET m_bind_socket = -1; // INVALID_SOCK;
 
-	sockaddr_any m_dst_addr;
+	std::atomic<sockaddr_any> m_dst_addr;
 	const bool m_blocking_mode = false;
 
 	string                   m_host;
