@@ -15,7 +15,7 @@ target_link_libraries(drift-tracer
 	PRIVATE lib-drift-tracer
 )
 
-if ( WIN32 AND (NOT MINGW AND NOT CYGWIN))
+if (WIN32 AND (NOT MINGW AND NOT CYGWIN))
 	target_link_libraries(drift-tracer PRIVATE ws2_32.lib)
 endif()
 

@@ -4,6 +4,12 @@
 #include "udp_socket.hpp"
 
 // submodules
+#ifndef SPDLOG_FMT_EXTERNAL
+#define SPDLOG_FMT_EXTERNAL
+#endif
+#ifndef SPDLOG_COMPILED_LIB
+#define SPDLOG_COMPILED_LIB
+#endif
 #include "spdlog/spdlog.h"
 
 using namespace std;
