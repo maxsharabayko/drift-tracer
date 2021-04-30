@@ -1,3 +1,4 @@
+#include "stdafx.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -8,7 +9,6 @@
 
 // Third party libraries
 #include "CLI/CLI.hpp"
-#include "spdlog/spdlog.h"
 
 #if _WIN32
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     app.set_config("--config");
     app.set_help_all_flag("--help-all", "Expand all help");
 
-    spdlog::set_pattern("%H:%M:%S.%f %^[%L]%$ %v");
+    //spdlog::set_pattern("%H:%M:%S.%f %^[%L]%$ %v");
     app.add_flag_function("--verbose,-v", [](size_t) {
             spdlog::set_level(spdlog::level::trace);
         }, "enable verbose output");

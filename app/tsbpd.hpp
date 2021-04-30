@@ -3,10 +3,6 @@
 #include "utils.hpp"
 #include "drift_tracer.hpp"
 
-
-// submodules
-#include "spdlog/spdlog.h"
-
 class tsbpd
 {
 public:

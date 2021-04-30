@@ -16,9 +16,16 @@ target_link_libraries(test-drift-tracer
     PRIVATE CONAN_PKG::catch2
     )
 
+target_compile_definitions(test-drift-tracer
+	PUBLIC
+	SPDLOG_COMPILED_LIB
+	SPDLOG_FMT_EXTERNAL
+)
+
 set_target_properties(test-drift-tracer
 	PROPERTIES
 	CXX_STANDARD 17
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
 add_test(drift-tracer test-drift-tracer)

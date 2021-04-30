@@ -20,3 +20,6 @@
 #else
 #pragma message( "ISO 8601 timepoints will not be used. Consider updating GCC to v5 or gigher!")
 #endif
+
+// submodules
+#include "spdlog/spdlog.h"

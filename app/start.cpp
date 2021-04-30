@@ -19,9 +19,6 @@
 #include "packet/pkt_ack.hpp"
 #include "packet/pkt_ackack.hpp"
 
-// submodules
-#include "spdlog/spdlog.h"
-
 using namespace std;
 using namespace chrono;
 #define LOG_SC_RECV "[PATH] "
