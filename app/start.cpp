@@ -69,7 +69,7 @@ void ack_sending_loop(shared_udp sock_udp, const atomic_bool& force_break)
             const auto tnow = steady_clock::now();
             if (tnow - last_msg_time > 1s)
             {
-                spdlog::info(LOG_SC_RECV "SND: don't know remote yet, waiting for incoming ACK.");
+                spdlog::warn(LOG_SC_RECV "SND: don't know remote yet, waiting for incoming ACK.");
                 last_msg_time = tnow;
             }
             continue;
