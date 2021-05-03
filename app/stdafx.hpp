@@ -1,5 +1,6 @@
 #pragma once
-
+#include <atomic>
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -10,6 +11,9 @@
 #include <cmath>
 
 #include <iomanip>
+#include <chrono>
+#include <future>
+#include <map>
 #include <mutex>
 
 #include <sstream>
@@ -20,3 +24,6 @@
 #else
 #pragma message( "ISO 8601 timepoints will not be used. Consider updating GCC to v5 or gigher!")
 #endif
+
+// submodules
+#include "spdlog/spdlog.h"

@@ -1,10 +1,8 @@
+#include "stdafx.hpp"
 #include <memory.h>
 #include <set>
 #include <iostream>
 #include "udp_socket.hpp"
-
-// submodules
-#include "spdlog/spdlog.h"
 
 using namespace std;
 using shared_udp = shared_ptr<socket_udp>;

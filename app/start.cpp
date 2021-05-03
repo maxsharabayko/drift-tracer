@@ -1,9 +1,3 @@
-#include <array>
-#include <chrono>
-#include <future>
-#include <map>
-#include <mutex>
-
 #include "start.hpp"
 #include "uri_parser.hpp"
 #include "udp_socket.hpp"
@@ -18,9 +12,6 @@
 #include "packet/pkt_base.hpp"
 #include "packet/pkt_ack.hpp"
 #include "packet/pkt_ackack.hpp"
-
-// submodules
-#include "spdlog/spdlog.h"
 
 using namespace std;
 using namespace chrono;

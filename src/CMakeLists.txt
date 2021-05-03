@@ -6,7 +6,7 @@ add_library(lib-drift-tracer ${SOURCES})
 
 target_compile_definitions(lib-drift-tracer
 	PUBLIC
-	SPDLOG_COMPILED_LIB
+	#SPDLOG_COMPILED_LIB
 	SPDLOG_FMT_EXTERNAL
 )
 
