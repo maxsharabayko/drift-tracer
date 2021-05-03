@@ -1,5 +1,6 @@
 #pragma once
 #include <atomic>
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -10,6 +11,9 @@
 #include <cmath>
 
 #include <iomanip>
+#include <chrono>
+#include <future>
+#include <map>
 #include <mutex>
 
 #include <sstream>

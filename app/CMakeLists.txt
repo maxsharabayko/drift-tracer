@@ -10,7 +10,6 @@ target_include_directories(drift-tracer PRIVATE
 
 target_compile_definitions(drift-tracer
 	PUBLIC
-	SPDLOG_COMPILED_LIB
 	SPDLOG_FMT_EXTERNAL
 )
 
@@ -23,6 +22,8 @@ target_link_libraries(drift-tracer
 
 if (WIN32 AND (NOT MINGW AND NOT CYGWIN))
 	target_link_libraries(drift-tracer PRIVATE ws2_32.lib)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	target_link_libraries(drift-tracer PUBLIC atomic)
 endif()
 
 set_target_properties(drift-tracer

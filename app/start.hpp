@@ -1,6 +1,5 @@
 #pragma once
-#include <atomic>
-#include <string>
+#include "stdafx.hpp"
 
 // Third party libraries
 #include "CLI/CLI.hpp"
