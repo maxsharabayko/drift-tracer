@@ -32,7 +32,9 @@ jobs:
           export PATH="${{ env.build_conan_path }}":$PATH
           mkdir build && cd build
           conan profile new cxx11 --detect
-          conan profile update settings.compiler.libcxx=libstdc++11 cxx11
+          if [ "$RUNNER_OS" == "Linux" ]; then
+             conan profile update settings.compiler.libcxx=libstdc++11 cxx11
+          fi
           conan install .. --profile cxx11
           cmake ../
       - name: build
