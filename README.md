@@ -25,6 +25,55 @@ $ cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 $ cmake --build .
 ```
 
+### Build on Linux
+
+To build the project on Linux you need to create a C++11 compliant conan profile.
+
+```shell
+# Creating new profile
+conan profile new cxx11 --detect
+# To view the newly created profile
+conan profile show cxx11
+
+# Switch compiler to c++11 (libstdc++11)
+conan profile update settings.compiler.libcxx=libstdc++11 cxx11
+
+# Install dependencies with the C++11 profile
+conan install .. --profile cxx11
+
+$ cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+$ cmake --build .
+```
+
+
+### Debug Build On Windows
+
+Debug build on Windows will fail, because `spdlog` library is built in release configuration by default.
+
+To build a debug version of the app,
+
+1. Create a [debug conan profile](https://docs.conan.io/en/latest/reference/commands/misc/profile.html) like this:
+
+```
+[settings]
+os=Windows
+os_build=Windows
+arch=x86_64
+arch_build=x86_64
+compiler=Visual Studio
+compiler.version=16
+build_type=Debug
+[options]
+[build_requires]
+[env]
+```
+
+2. Build spdlog package
+
+```
+conan install .. --build=spdlog --profile debug
+```
+
 ## Usage
 
 Collecting drift trace logs on two machines: A and B.

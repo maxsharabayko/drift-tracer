@@ -63,8 +63,8 @@ message(STATUS "")
 
 
 # A target named "clangformat", use make clangformat to format all specified files
-include(ClangFormat)
-set(SOURCES_TO_FORMAT "src/buf_view.hpp")
-message(STATUS "SOURCES_TO_FORMAT: ${SOURCES_TO_FORMAT}")
-clangformat_setup(${SOURCES_TO_FORMAT})
+#include(ClangFormat)
+#set(SOURCES_TO_FORMAT "src/buf_view.hpp")
+#message(STATUS "SOURCES_TO_FORMAT: ${SOURCES_TO_FORMAT}")
+#clangformat_setup(${SOURCES_TO_FORMAT})
 
