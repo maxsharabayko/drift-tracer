@@ -94,7 +94,7 @@ inline ctrl_type pkt_base<storage>::control_type() const
 {
 	// Discard the highest bit, which defines type of packet: ctrl/data
 	const uint16_t type = 0x7FFF & pkt_view<storage>::template get_field<fld_ctrltype>();
-	if (type >= (int) ctrl_type::HANDSHAKE && type <= (int) ctrl_type::PEERERROR
+	if ((type >= (int) ctrl_type::HANDSHAKE && type <= (int) ctrl_type::PEERERROR)
 		|| type == (int) ctrl_type::USERDEFINED)
 	{
 		return static_cast<ctrl_type>(type);
