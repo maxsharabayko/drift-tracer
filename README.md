@@ -107,3 +107,18 @@ drift-tracer start udp://192.168.2.2:4200 --tracefile drift-trace-b.csv
 ```
 
 Binding is also optional.
+
+## Reading Logs
+
+The transmission between peers is bidirectional. Both peers send acknowledgement (ACK) packets and receive acknowledment of acknowledgment (ACKACK) packets back.
+
+Statistics are measured at the time of ACKACK packet reception. The following statistics are available:
+ - `Timepoint` - Timestamp of collecting statistics;
+ - `usElapsed` - Time elapsed since the start of connection;
+ - `usAckAckTimestamp` - Timestamp extracted from the ACKACK packet (the time ACKACK has been sent);
+ - `usRTT` - RTT sample calculated by ACK/ACKACK pair;
+ - `usSmoothedRTT` - Smoothed RTT (an exponentially weighted moving average) of RTT samples;
+ - `RTTVar` - Variance in RTT samples;
+- The latest 4 fields `usDriftSample`, `usDrift`, `usOverdrift`, `TsbpdTimeBase` are the values of Drift Sample, Drift, Overdrift and TSBPD Time Base as per [SRT drift tracer model](https://datatracker.ietf.org/doc/html/draft-sharabayko-srt-00#section-4.7). By default, there is no compensation for RTT variance in drift samples. However, there is a possibility to enable this compensation by means of `--compensatertt` option, `start` sub-command. See [PR #1965 - Drift Tracer: taking RTT into account](https://github.com/Haivision/srt/pull/1965) for details.
+
+Some statistics are measured using both system (`Sys` postfix) and monotonic or steady clock (`Std` postfix).
