@@ -18,7 +18,7 @@ def main():
                     mode='lines+markers',
                     name='Instant RTT steady, us'))
 
-    fig.add_trace(go.Scatter(x=df_driftlog['usElapsedStd'], y=df_driftlog['usRTTStdRma'],
+    fig.add_trace(go.Scatter(x=df_driftlog['usElapsedStd'], y=df_driftlog['usSmoothedRTTStd'],
                     mode='lines+markers',
                     name='RTT RMA steady, us'))
 

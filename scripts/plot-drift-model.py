@@ -103,7 +103,7 @@ def main(filepath, local_sys, remote_sys):
                     name='Instant RTT steady, us'),
                     row=2, col=1)
 
-    fig.add_trace(go.Scatter(x=df_driftlog['sTime'], y=df_driftlog['usRTTStdRma'],
+    fig.add_trace(go.Scatter(x=df_driftlog['sTime'], y=df_driftlog['usSmoothedRTTStd'],
                     mode='lines+markers',
                     name='RTT RMA steady, us'),
                     row=2, col=1)
