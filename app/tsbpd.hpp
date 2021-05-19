@@ -17,7 +17,7 @@ public:
         }
 
         const std::chrono::steady_clock::duration drift =
-            recv_time_std - (get_time_base(timestamp_us) + microseconds_from(timestamp_us));
+            recv_time_std - (get_pkt_time_base(timestamp_us) + microseconds_from(timestamp_us));
         const long long drift_us = count_microseconds(drift) - (rtt_us - m_first_rtt_us) / 2;
         const bool updated = m_drift_tracer.update(drift_us);
         if (updated)
@@ -32,7 +32,7 @@ public:
         return drift_us;
     }
 
-    std::chrono::steady_clock::time_point get_time_base(uint32_t timestamp_us);
+    std::chrono::steady_clock::time_point get_pkt_time_base(uint32_t timestamp_us);
 
     int64_t drift() const { return m_drift_tracer.drift(); }
     int64_t overdrift() const { return m_drift_tracer.overdrift(); }

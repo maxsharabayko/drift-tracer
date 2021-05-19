@@ -132,7 +132,7 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_poin
     {
         g_stats_logger->trace(recv_time_std - g_start_time_std, recv_time_sys - g_start_time_sys, ackpkt.timestamp(), ackpkt.timestamp_sys(),
             rtt_pair.rtt_sys, rtt_pair.rtt_std, g_path.rtt, g_path.rtt_var, drift_sample,
-            g_tsbpd.drift(), g_tsbpd.overdrift(), g_tsbpd.get_time_base());
+            g_tsbpd.drift(), g_tsbpd.overdrift(), g_tsbpd.get_pkt_time_base(ackpkt.timestamp()));
     }
     else if (steady_clock::now() > g_stats_time)
     {

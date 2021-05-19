@@ -4,7 +4,7 @@ using namespace std::chrono;
 
 static const uint32_t MAX_TIMESTAMP = 0xFFFFFFFF; //Full 32 bit (01h11m35s)
 
-steady_clock::time_point tsbpd::get_time_base(uint32_t timestamp_us)
+steady_clock::time_point tsbpd::get_pkt_time_base(uint32_t timestamp_us)
 {
     /*
      * Packet timestamps wrap around every 01h11m35s (32-bit in usec)
