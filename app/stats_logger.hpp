@@ -26,7 +26,7 @@ public:
     void trace(const steady_clock::duration& elapsed_std, const system_clock::duration& elapsed_sys,
         unsigned ackack_timestamp_std, unsigned ackack_timestamp_sys, int rtt_sys, int rtt_std, int rtt_std_rma, int rtt_std_var,
         int64_t drift_sample_std, int64_t drift, int64_t overdrift,
-        const std::chrono::steady_clock::time_point& tsbpd_base)
+        const steady_clock::time_point& tsbpd_base)
     {
         using namespace std::chrono;
         std::lock_guard<std::mutex> lck(this->mtx_);

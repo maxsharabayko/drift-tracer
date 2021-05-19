@@ -5,38 +5,43 @@
 
 class tsbpd
 {
+    using steady_clock = std::chrono::steady_clock;
 public:
     /// @returns current drift sample
-    long long on_ackack(unsigned timestamp_us, int rtt_us, const std::chrono::steady_clock::time_point& recv_time_std)
+    long long on_ackack(unsigned timestamp_us, int rtt_us, const steady_clock::time_point& recv_time_std)
     {
-        if (m_tsTsbPdTimeBase == std::chrono::steady_clock::time_point())
+        if (m_tsTsbPdTimeBase == steady_clock::time_point())
         {
             m_tsTsbPdTimeBase = recv_time_std - microseconds_from(timestamp_us);
             m_first_rtt_us = rtt_us;
             return 0;
         }
 
-        const std::chrono::steady_clock::duration drift =
+        const steady_clock::duration drift =
             recv_time_std - (get_pkt_time_base(timestamp_us) + microseconds_from(timestamp_us));
         const long long drift_us = count_microseconds(drift) - (rtt_us - m_first_rtt_us) / 2;
         const bool updated = m_drift_tracer.update(drift_us);
         if (updated)
         {
             // tracer's overdrift will be reset to 0 with the next incoming sample.
-            std::chrono::steady_clock::duration overdrift = microseconds_from(m_drift_tracer.overdrift());
+            steady_clock::duration overdrift = microseconds_from(m_drift_tracer.overdrift());
             m_tsTsbPdTimeBase += overdrift;
 
             spdlog::info("TSBPD base time shift {} us, drift {}", count_microseconds(overdrift), m_drift_tracer.drift());
         }
 
+        updateTsbPdTimeBase(timestamp_us); // Shift if wrapping period ends.
+
         return drift_us;
     }
 
-    std::chrono::steady_clock::time_point get_pkt_time_base(uint32_t timestamp_us);
+    void updateTsbPdTimeBase(uint32_t usPktTimestamp);
+
+    steady_clock::time_point get_pkt_time_base(uint32_t timestamp_us) const;
 
     int64_t drift() const { return m_drift_tracer.drift(); }
     int64_t overdrift() const { return m_drift_tracer.overdrift(); }
-    std::chrono::steady_clock::time_point get_time_base() const { return m_tsTsbPdTimeBase; }
+    steady_clock::time_point get_time_base() const { return m_tsTsbPdTimeBase; }
 
 private:
     /// Max drift (usec) above which TsbPD Time Offset is adjusted
@@ -45,7 +50,7 @@ private:
     static const int TSBPD_DRIFT_MAX_SAMPLES = 1000;
     DriftTracer<TSBPD_DRIFT_MAX_SAMPLES, TSBPD_DRIFT_MAX_VALUE> m_drift_tracer;
 
-    std::chrono::steady_clock::time_point m_tsTsbPdTimeBase = {};   // localtime base for TsbPd mode
+    steady_clock::time_point m_tsTsbPdTimeBase = {};   // localtime base for TsbPd mode
     // Note: m_tsTsbPdTimeBase cumulates values from:
     // 1. Initial SRT_CMD_HSREQ packet returned value diff to current time:
     //    == (NOW - PACKET_TIMESTAMP), at the time of HSREQ reception
