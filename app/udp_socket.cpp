@@ -15,8 +15,6 @@ using shared_udp = shared_ptr<socket_udp>;
 
 #define LOG_SOCK_UDP "[UDP] "
 
-extern const set<string> false_names = { "0", "no", "off", "false" };
-
 sockaddr_any CreateAddr(const string& name, unsigned short port, int pref_family = AF_UNSPEC)
 {
 	// Handle empty name.
@@ -29,17 +27,13 @@ sockaddr_any CreateAddr(const string& name, unsigned short port, int pref_family
 		return result;
 	}
 
-	bool first6 = pref_family != AF_INET;
-	int families[2] = {AF_INET6, AF_INET};
-	if (!first6)
-	{
-		families[0] = AF_INET;
-		families[1] = AF_INET6;
-	}
+	const bool first6 = pref_family != AF_INET;
+	const array<int, 2> families = first6
+		? array<int, 2>{AF_INET6, AF_INET}
+		: array<int, 2>{AF_INET, AF_INET6};
 
-	for (int i = 0; i < 2; ++i)
+	for (const auto family : families)
 	{
-		int family = families[i];
 		sockaddr_any result (family);
 
 		// Try to resolve the name by pton first
@@ -63,7 +57,7 @@ sockaddr_any CreateAddr(const string& name, unsigned short port, int pref_family
 	};
 
 	addrinfo* val = nullptr;
-	int erc = getaddrinfo(name.c_str(), nullptr, &fo, &val);
+	const int erc = getaddrinfo(name.c_str(), nullptr, &fo, &val);
 	if (erc == 0)
 	{
 		result.set(val->ai_addr);
