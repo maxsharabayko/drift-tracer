@@ -9,6 +9,7 @@ struct config
 {
     int message_size = 1456;
     bool compensate_rtt = false;
+    bool compact_trace  = false;
     std::string statsfile;
 };
 

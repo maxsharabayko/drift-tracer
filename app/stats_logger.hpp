@@ -8,7 +8,8 @@ class stats_logger
     using steady_clock = std::chrono::steady_clock;
     using system_clock = std::chrono::system_clock;
 public:
-    stats_logger(const std::string& filename)
+    stats_logger(const std::string& filename, bool compact_mode)
+        : compact_mode_(compact_mode)
     {
         this->fout_.open(filename, std::ofstream::out);
         if (!this->fout_)
@@ -40,10 +41,14 @@ public:
         this->fout_ << rtt_std << ",";
         this->fout_ << rtt_std_rma << ",";
         this->fout_ << rtt_std_var << ",";
-        this->fout_ << drift_sample_std << ",";
-        this->fout_ << drift << ",";
-        this->fout_ << overdrift << ",";
-        this->fout_ << format_time_stdy(tsbpd_base) << "\n";
+        if (!compact_mode_)
+        {
+            this->fout_ << drift_sample_std << ",";
+            this->fout_ << drift << ",";
+            this->fout_ << overdrift << ",";
+            this->fout_ << format_time_stdy(tsbpd_base);
+        }
+        this->fout_ << "\n";
         this->fout_.flush();
     }
 
@@ -52,10 +57,14 @@ private:
     {
         //std::lock_guard<std::mutex> lck(this->mtx_);
         this->fout_ << "TimepointSys,usElapsedStd,usElapsedSys,usAckAckTimestampStd,usAckAckTimestampSys,";
-        this->fout_ << "usRTTSys,usRTTStd,usSmoothedRTTStd,RTTVarStd,usDriftSampleStd,usDriftStd,usOverdriftStd,TsbpdTimeBaseStd\n";
+        this->fout_ << "usRTTSys,usRTTStd,usSmoothedRTTStd,RTTVarStd";
+        if (!compact_mode_)
+            this->fout_ << ",usDriftSampleStd,usDriftStd,usOverdriftStd,TsbpdTimeBaseStd";
+        this->fout_ << "\n";
     }
 
 private:
+    const bool compact_mode_;
     std::mutex mtx_;
     std::ofstream fout_;
 

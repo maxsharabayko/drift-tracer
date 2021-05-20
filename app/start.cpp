@@ -226,7 +226,7 @@ void run(const string& sock_url,
     if (!cfg.statsfile.empty())
     {
         try {
-            g_stats_logger = make_unique<stats_logger>(cfg.statsfile);
+            g_stats_logger = make_unique<stats_logger>(cfg.statsfile, cfg.compact_trace);
         }
         catch (const runtime_error& e)
         {
@@ -247,7 +247,8 @@ CLI::App* add_subcommand(CLI::App& app, config& cfg, string& sock_url)
     CLI::App* sc_route = app.add_subcommand("start", "Start exchange")->fallthrough();
     sc_route->add_option("sock_url", sock_url, "Source URI")->expected(1);
     sc_route->add_option("--tracefile", cfg.statsfile, "Trace output file");
-    sc_route->add_flag("--compensatertt", cfg.compensate_rtt, "Compensate RTT variations in drift tracing");
+    sc_route->add_flag("--compensate-rtt", cfg.compensate_rtt, "Compensate RTT variations in drift tracing");
+    sc_route->add_flag("--compact-trace", cfg.compact_trace, "Write compact trace file without drift correction artifacts");
 
     return sc_route;
 }
