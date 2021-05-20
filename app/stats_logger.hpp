@@ -40,10 +40,10 @@ public:
         this->fout_ << rtt_sys << ",";
         this->fout_ << rtt_std << ",";
         this->fout_ << rtt_std_rma << ",";
-        this->fout_ << rtt_std_var << ",";
+        this->fout_ << rtt_std_var;
         if (!compact_mode_)
         {
-            this->fout_ << drift_sample_std << ",";
+            this->fout_ << "," << drift_sample_std << ",";
             this->fout_ << drift << ",";
             this->fout_ << overdrift << ",";
             this->fout_ << format_time_stdy(tsbpd_base);
