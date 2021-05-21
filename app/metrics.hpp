@@ -4,6 +4,7 @@
 #include "metrics_jitter.hpp"  // RFC 3550
 #include "metrics_reorder.hpp" // RFC 4737
 #include "metrics_latency.hpp"
+#include "buf_view.hpp"
 
 namespace dtrace::metrics
 {
@@ -13,11 +14,11 @@ namespace dtrace::metrics
 	//#define LOG_SC_METRICS "METRIC "
 
 	void write_sysclock_timestamp(vector<unsigned char>& payload);
-	system_clock::time_point read_sysclock_timestamp(const vector<unsigned char>& payload);
+	system_clock::time_point read_sysclock_timestamp(const const_bufv& payload);
 	void write_steadyclock_timestamp(vector<unsigned char>& payload);
-	steady_clock::time_point read_stdclock_timestamp(const vector<unsigned char>& payload);
+	steady_clock::time_point read_stdclock_timestamp(const const_bufv& payload);
 	void write_packet_seqno(vector<unsigned char>& payload, uint64_t seqno);
-	uint64_t read_packet_seqno(const vector<unsigned char>& payload);
+	uint64_t read_packet_seqno(const const_bufv& payload);
 
 	class generator
 	{
@@ -51,7 +52,7 @@ namespace dtrace::metrics
 	public:
 		// TODO: sysclock diff mismatch with stdclock diff
 		// TODO: latency measurements
-		inline void validate_packet(const vector<unsigned char>& payload)
+		inline void validate_packet(const const_bufv& payload)
 		{
 			// TODO: validate payload
 			const auto sys_time_now = system_clock::now();

@@ -12,6 +12,7 @@ struct config
     bool compact_trace  = false;
     int  duration       = 0;
     int  sendrate       = 0;
+    unsigned metrics_freq_ms = 1000;
     std::string statsfile;
 };
 

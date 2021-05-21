@@ -66,6 +66,8 @@ public:
 
 	void control_type(ctrl_type type);
 
+	/// @brief Actual length of the packet.
+	/// Maybe be lower than buffer capacity.
 	size_t length() const { return this->len_; }
 
 	void inline set_length(size_t len)

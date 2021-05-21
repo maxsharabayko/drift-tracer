@@ -62,40 +62,41 @@ void data_sending_loop(shared_udp sock_udp, const config& cfg, const atomic_bool
             this_thread::sleep_for(1s);
             continue;
         }
+        break;
     }
     if (force_break)
         return;
 
-	const auto start_time   = steady_clock::now();
-	auto stat_time          = start_time;
+    const auto start_time   = steady_clock::now();
+    auto stat_time          = start_time;
 
     constexpr bool metrics_enabled = true;
-	metrics::generator pldgen(metrics_enabled);
+    metrics::generator pldgen(metrics_enabled);
 
-	int  prev_i    = 0;
+    int  prev_i    = 0;
 
-	unique_ptr<ipacer> ratepacer =
-		cfg.sendrate ? unique_ptr<ipacer>(new pacer(cfg.sendrate, cfg.message_size))
-					 : nullptr;
+    unique_ptr<ipacer> ratepacer =
+        cfg.sendrate ? unique_ptr<ipacer>(new pacer(cfg.sendrate, cfg.message_size))
+                     : nullptr;
 
-	try
-	{
+    try
+    {
         int num_sent = 0;
-		while (!force_break)
-		{
-			if (ratepacer)
-			{
-				ratepacer->wait(force_break);
-			}
+        while (!force_break)
+        {
+            if (ratepacer)
+            {
+                ratepacer->wait(force_break);
+            }
 
-			// Check if sending duration is respected
-			const auto tnow = steady_clock::now();
-			if (cfg.duration > 0 && (tnow - start_time > seconds(cfg.duration)))
-			{
-				break;
-			}
+            // Check if sending duration is respected
+            const auto tnow = steady_clock::now();
+            if (cfg.duration > 0 && (tnow - start_time > seconds(cfg.duration)))
+            {
+                break;
+            }
 
-			pldgen.generate_payload(message_to_send);
+            pldgen.generate_payload(message_to_send);
 
             {
                 lock_guard<mutex> lck(g_sock_mut);
@@ -103,26 +104,26 @@ void data_sending_loop(shared_udp sock_udp, const config& cfg, const atomic_bool
             }
             ++num_sent;
 
-			if (tnow > (stat_time + chrono::seconds(1)))
-			{
-				const auto      elapsed = tnow - stat_time;
-				const long long bps     = (8 * num_sent * cfg.message_size) / duration_cast<milliseconds>(elapsed).count() * 1000;
-				spdlog::info(LOG_SC_GENERATE "Sending at {} kbps", bps / 1000);
-				stat_time = tnow;
-				num_sent  = 0;
-			}
-		}
-	}
-	catch (const runtime_error& e)
-	{
-		spdlog::warn(LOG_SC_GENERATE "{}", e.what());
+            if (tnow > (stat_time + chrono::seconds(1)))
+            {
+                const auto      elapsed = tnow - stat_time;
+                const long long bps     = (8 * num_sent * cfg.message_size) / duration_cast<milliseconds>(elapsed).count() * 1000;
+                spdlog::info(LOG_SC_GENERATE "Sending at {} kbps", bps / 1000);
+                stat_time = tnow;
+                num_sent  = 0;
+            }
+        }
+    }
+    catch (const runtime_error& e)
+    {
+        spdlog::warn(LOG_SC_GENERATE "{}", e.what());
         return;
-	}
+    }
 
-	if (force_break)
-	{
-		spdlog::info(LOG_SC_GENERATE "interrupted by request!");
-	}
+    if (force_break)
+    {
+        spdlog::info(LOG_SC_GENERATE "interrupted by request!");
+    }
 }
 
 /// @brief Sends ACK packets every 10 ms
@@ -230,44 +231,68 @@ void on_ctrl_ackack(pkt_ackack<const_bufv> ackpkt, const steady_clock::time_poin
     }
 }
 
-#if 0
+
 void on_pkt_data(pkt_base<const_bufv> pkt, const config &cfg)
 {
-	static metrics::validator validator;
-	static auto stat_time = steady_clock::now();
+    static metrics::validator validator;
+    static auto stat_time = steady_clock::now();
+    static unsigned long bytes_rcvd = 0;
+    static double rate_Mbps_rma = 0.0;
+    static auto rate_time = steady_clock::now();
 
-	ofstream metrics_file;
-	// if (cfg.enable_metrics && !cfg.metrics_file.empty() && cfg.metrics_freq_ms > 0)
-	// {
-	// 	metrics_file.open(cfg.metrics_file, std::ofstream::out);
-	// 	if (!metrics_file)
-	// 	{
-	// 		spdlog::error(LOG_SC_RECEIVE "Failed to open metrics file {} for output", cfg.metrics_file);
-	// 		return;
-	// 	}
+    ofstream metrics_file;
+    // if (cfg.enable_metrics && !cfg.metrics_file.empty() && cfg.metrics_freq_ms > 0)
+    // {
+    // 	metrics_file.open(cfg.metrics_file, std::ofstream::out);
+    // 	if (!metrics_file)
+    // 	{
+    // 		spdlog::error(LOG_SC_RECEIVE "Failed to open metrics file {} for output", cfg.metrics_file);
+    // 		return;
+    // 	}
 
-	// 	metrics_file << validator.stats_csv(true);
-	// }
+    // 	metrics_file << validator.stats_csv(true);
+    // }
 
-	
-    validator.validate_packet(buffer);
+    
+    validator.validate_packet(pkt.const_buf());
 
     const auto tnow = steady_clock::now();
-    if (tnow > (stat_time + chrono::milliseconds(cfg.metrics_freq_ms)))
+
+    // Receiving rate estimation.
+    bytes_rcvd += pkt.length();
+    if (tnow > rate_time + chrono::milliseconds(cfg.metrics_freq_ms))
     {
-        if (metrics_file)
+        const auto duration_ms = duration_cast<milliseconds>(tnow - rate_time).count();
+        const double rate_Mbps = 8 * bytes_rcvd / static_cast<double>(duration_ms) / 1000;
+
+        if (rate_Mbps_rma <= 0.01)
         {
-            metrics_file << validator.stats_csv(false);
+            rate_Mbps_rma = rate_Mbps;
         }
         else
         {
+            rate_Mbps_rma = avg_rma<8, double>(rate_Mbps_rma, rate_Mbps);
+        }
+        rate_time = tnow;
+
+        scoped_lock<mutex> lck(g_path_mut);
+        g_path.rcv_rate_megabps = rate_Mbps_rma;
+    }
+
+    if (cfg.metrics_freq_ms != 0 && (tnow > (stat_time + chrono::milliseconds(cfg.metrics_freq_ms))))
+    {
+        /*if (metrics_file)
+        {
+            metrics_file << validator.stats_csv(false);
+        }
+        else*/
+        {
             const auto stats_str = validator.stats();
-            spdlog::info(LOG_SC_RECEIVE "{}", stats_str);
+            spdlog::info(LOG_SC_RECV "Rcv rate {:.3f} Mbps, {}", rate_Mbps_rma, stats_str);
         }
         stat_time = tnow;
     }
 }
-#endif
 
 /// @brief Receives packets from data receiver and forwards them over multiple links to data sender.
 /// @param src source UDP socket
@@ -299,7 +324,7 @@ void ack_reply_loop(shared_udp src, const atomic_bool& force_break, const config
 
         if (!pkt.is_ctrl())
         {
-            // TODO: on_pkt_data(pkt, cfg);
+            on_pkt_data(pkt, cfg);
             //spdlog::info(LOG_SC_RECV "RCV received unknown packet. Ignoring.");
             continue;
         }
@@ -387,7 +412,7 @@ CLI::App* add_subcommand(CLI::App& app, config& cfg, string& sock_url)
     sc_route->add_flag("--compact-trace", cfg.compact_trace, "Write compact trace file without drift correction artifacts");
 
     sc_route->add_option("--msgsize", cfg.message_size, "Size of a message to send");
-	sc_route->add_option("--sendrate", cfg.sendrate, "Bitrate of the dummy payload to send")
+    sc_route->add_option("--sendrate", cfg.sendrate, "Bitrate of the dummy payload to send")
         ->transform(CLI::AsNumberWithUnit(to_bps, CLI::AsNumberWithUnit::CASE_SENSITIVE));
     //sc_generate->add_option("--duration", cfg.duration, "Sending duration in seconds (supresses --num option)")
 

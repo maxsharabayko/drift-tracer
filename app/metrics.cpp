@@ -42,7 +42,7 @@ void write_sysclock_timestamp(vector<unsigned char>& payload)
 	*(reinterpret_cast<int64_t*>(payload.data() + SYS_TIMESTAMP_BYTE_OFFSET)) = elapsed_us.count();
 }
 
-system_clock::time_point read_sysclock_timestamp(const vector<unsigned char>& payload)
+system_clock::time_point read_sysclock_timestamp(const const_bufv& payload)
 {
 	const int64_t elapsed_us = *(reinterpret_cast<const int64_t*>(payload.data() + SYS_TIMESTAMP_BYTE_OFFSET));
 
@@ -65,7 +65,7 @@ void write_steadyclock_timestamp(vector<unsigned char>& payload)
 	*(reinterpret_cast<int64_t*>(payload.data() + STD_TIMESTAMP_BYTE_OFFSET)) = elapsed_us.count();
 }
 
-steady_clock::time_point read_stdclock_timestamp(const vector<unsigned char>& payload)
+steady_clock::time_point read_stdclock_timestamp(const const_bufv& payload)
 {
 	const int64_t elapsed_us = *(reinterpret_cast<const int64_t*>(payload.data() + STD_TIMESTAMP_BYTE_OFFSET));
 	const auto std_timestamp = steady_clock::time_point() + microseconds(elapsed_us);
@@ -78,7 +78,7 @@ void write_packet_seqno(vector<unsigned char>& payload, uint64_t seqno)
 	*ptr = seqno;
 }
 
-uint64_t read_packet_seqno(const vector<unsigned char>& payload)
+uint64_t read_packet_seqno(const const_bufv& payload)
 {
 	const uint64_t seqno = *reinterpret_cast<const uint64_t*>(payload.data() + PKT_SEQNO_BYTE_OFFSET);
 	return seqno;
