@@ -1,0 +1,39 @@
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - tclsh
+      - pkg-config
+      - cmake
+      - build-essential
+  sonarcloud:
+    organization: "maxlovic"
+    token:
+      secure: "E+sH3UIVzVA6FhyEW7d3dybd6yEceL3hiCTn9FKCvKGO61yXL97n9dlrycXCr5AVX7sXmq+SiEZfRGrvzmQHRSV/otAAWRZPY+oUJOmg+QXwWaxCXZrC0N0C8L6/SEVAvwPoiSf2ytehrIdPI8et9GnZLTi981jPuNP7FBrtQeAJz04NVppf9F0WrC7QnDmETrq2AWh6YK9Y+dU8PWK0FfY6iaoRyY4iFjEIqy4fE935EG+4GK+d/sCbcXI+P+tH4vASiknencnlDNRtjVJrACRwk0hgpSjqQ3Ux4KH4jwCu2CdhoUJm1m7VLObqxwLc9tMWgIzk5WRwr2a26sakGx1EquuyHHBqU+2bUi1n0YNZcL2/kjx+8hHCd0hg4lUYqobPhKZ03pSkljDhBM5iXo08obDD/Z+j03di1+gtpaLSg8k4qX9JBaCH8wt32kubVOUssIpog446RqJ+pB4rMLHJwNXv8+wEA53U2EL3yjCKAe9rdWYJ11HqG6g7PCe+elWJo7RmlYj5aBxB3meUCxjVhSgGqnIubd2t6Ma3pH4o89jobQfYN//5ejUN0IORfgAvy59cdx3jeuWPvcEtZUKo7neoSMKFzWrAi53Ka3OWoReoOLmDw6U9l8wfdFo0RE1U1BOmNCXaicbTx5qirRAMY9g6X6PDb3WsRJKkmAM="
+
+script:
+  # Prepare the build system
+  - pip3 install wheel setuptools
+  - pip3 install conan
+  - mkdir build
+  - cd build
+  - conan profile new cxx11 --detect
+  - conan profile update settings.compiler.libcxx=libstdc++11 cxx11
+  - conan install .. --profile cxx11
+  - cmake ../
+  - cd ..
+  - NUMBER_OF_PROCESSORS=$(nproc --all)
+  # Wraps the compilation with the Build Wrapper to generate configuration (used
+  # later by the SonarQube Scanner) into the "bw-output" folder
+  - build-wrapper-linux-x86-64 --out-dir bw-output cmake --build build/
+  # And finally run the SonarQube analysis - read the "sonar-project.properties"
+  # file to see the specific configuration
+  - sonar-scanner -Dsonar.cfamily.cache.enabled=true -Dsonar.cfamily.cache.path=${TRAVIS_HOME}/.cfamily -Dsonar.cfamily.threads=${NUMBER_OF_PROCESSORS}
+
+cache:
+  directories:
+    - $HOME/.sonar/cache
+    # This contains the CFamily cache. According to https://docs.travis-ci.com/user/caching/#pull-request-builds-and-caches,
+    # for a PR, it will use the cache of the target branch if the branch of the PR does not already have its cache.
+    - $HOME/.cfamily
