@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef _WIN32
+#define NOMINMAX
    #define _CRT_SECURE_NO_WARNINGS 1 // silences windows complaints for sscanf
    #include <winsock2.h>
    #include <ws2tcpip.h>

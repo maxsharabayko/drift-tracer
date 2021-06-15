@@ -9,6 +9,7 @@ struct path_metrics
 
     int rtt     = 0;
     int rtt_var = 0;
+    double rcv_rate_megabps = 0.0;
     // TODO: track lost packets
     ack_window<1024> ack_records;
 };

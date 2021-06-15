@@ -15,6 +15,7 @@
 #include <future>
 #include <map>
 #include <mutex>
+#include <numeric>
 
 #include <sstream>
 
