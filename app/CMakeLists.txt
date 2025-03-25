@@ -14,9 +14,9 @@ target_compile_definitions(drift-tracer
 )
 
 target_link_libraries(drift-tracer
-	PRIVATE CONAN_PKG::cli11
-	PRIVATE CONAN_PKG::spdlog
-	PRIVATE CONAN_PKG::fmt
+	PRIVATE CLI11::CLI11
+	PRIVATE spdlog::spdlog
+	PRIVATE fmt::fmt
 	PRIVATE lib-drift-tracer
 )
 

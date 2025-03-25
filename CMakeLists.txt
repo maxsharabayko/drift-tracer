@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_policy(SET CMP0091 NEW)
+
 project(DRIFT_TRACER VERSION 0.0.1 LANGUAGES C CXX)
 set(VERSION_TYPE "dev" CACHE STRING "version type" FORCE)
 site_name(VERSION_HOST) # read hostname to VERSION_HOST
@@ -8,11 +10,14 @@ message(STATUS "")
 message(STATUS "=== ${PROJECT_NAME} Project Configuration ===")
 message(STATUS "")
 
+find_package(Catch2 REQUIRED)
+find_package(CLI11 REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
+
+
 #------------------------------------------------------------------------------
 # General settings
-
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup(TARGETS NO_OUTPUT_DIRS)
 
 # Be nice to visual studio
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

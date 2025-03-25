@@ -16,7 +16,7 @@ This project uses the following tools:
 To build the project on Linux you need to create a C++11 compliant Conan profile:
 
 ```shell
-mkdir build && cd build
+mkdir _build && cd _build
 
 # Create new Conan profile
 conan profile new cxx11 --detect
@@ -31,9 +31,9 @@ conan profile update settings.compiler.version=8 cxx11
 conan profile show cxx11
 
 # Install dependencies with the C++11 profile
-conan install .. --profile cxx11 --build fmt --build spdlog
+conan install .. -pr:a cxx11 -s build_type=Release -s compiler.cppstd=17 --build=missing --output-folder=.
 
-cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_TOOLCHAIN_FILE="./conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
 cmake --build ./
 ```
 
@@ -43,9 +43,9 @@ cmake --build ./
 mkdir build && cd build
 
 # To build the fmt library from sources
-conan install .. --build=fmt
+conan install .. -s build_type=Release -s compiler.cppstd=17 --build=missing --output-folder=.
 
-cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_TOOLCHAIN_FILE="./conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
 cmake --build .
 ```
 
@@ -73,7 +73,7 @@ Follow the steps provided below to build a debug version of the application:
 2. Build spdlog package
 
    ```
-   conan install .. --build=spdlog --profile debug
+   conan install .. -s build_type=Release -s compiler.cppstd=17 --build=missing --output-folder=.
    ```
 
 3. Build the project

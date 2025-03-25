@@ -13,7 +13,7 @@ target_include_directories(test-drift-tracer PRIVATE
 	)
 
 target_link_libraries(test-drift-tracer
-    PRIVATE CONAN_PKG::catch2
+    PRIVATE Catch2::Catch2WithMain
     )
 
 target_compile_definitions(test-drift-tracer
