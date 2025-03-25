@@ -76,7 +76,7 @@ class drift_tracer:
 )
 def main(filepath, local_sys, remote_sys):
     
-    df_driftlog  = pd.read_csv(filepath)
+    df_driftlog  = pd.read_csv(filepath, delimiter=',', skipinitialspace=True)
 
     tracer = drift_tracer(df_driftlog, not local_sys, not remote_sys)
     df_drift = tracer.calculate_drift(df_driftlog)
