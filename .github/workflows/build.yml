@@ -14,12 +14,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-  
-      - name: Install conan
-        shell: bash
-        run: |
-          pip3 install wheel setuptools
-          pip3 install conan
+
+      - name: Setup Conan Environment
+        uses: hankhsu1996/setup-conan@v1.1.0
 
       - if: matrix.os == 'macOS-latest'
         name: install clang-format
@@ -30,14 +27,11 @@ jobs:
         shell: bash
         run: |
           export PATH="${{ env.build_conan_path }}":$PATH
-          mkdir build && cd build
-          conan profile new cxx11 --detect
-          if [ "$RUNNER_OS" == "Linux" ]; then
-             conan profile update settings.compiler.libcxx=libstdc++11 cxx11
-          fi
-          conan install .. --profile cxx11
-          cmake ../
+          mkdir _build && cd _build
+          conan profile detect --name cxx11
+          conan install .. -pr:a cxx11 -s build_type=Release -s compiler.cppstd=17 --build=missing --output-folder=.
+          cmake .. -DCMAKE_TOOLCHAIN_FILE="./conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
       - name: build
-        run: cd build && cmake --build ./
+        run: cd _build && cmake --build ./
 
         
