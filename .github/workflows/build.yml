@@ -32,6 +32,6 @@ jobs:
           conan install .. -pr:a cxx11 -s build_type=Release -s compiler.cppstd=17 --build=missing --output-folder=.
           cmake .. -DCMAKE_TOOLCHAIN_FILE="./conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
       - name: build
-        run: cd build && cmake --build ./
+        run: cd _build && cmake --build ./
 
         
