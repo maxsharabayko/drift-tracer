@@ -14,12 +14,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-  
-      - name: Install conan
-        shell: bash
-        run: |
-          pip3 install wheel setuptools
-          pip3 install conan
+
+      - name: Setup Conan Environment
+        uses: hankhsu1996/setup-conan@v1.1.0
 
       - if: matrix.os == 'macOS-latest'
         name: install clang-format
