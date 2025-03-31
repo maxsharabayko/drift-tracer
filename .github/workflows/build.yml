@@ -29,7 +29,7 @@ jobs:
           export PATH="${{ env.build_conan_path }}":$PATH
           mkdir _build && cd _build
           conan profile detect --name cxx11
-          conan install .. -pr:a cxx11 -s build_type=Release -s compiler.cppstd=17 -s compiler.libcxx=libstdc++11 --build=missing --output-folder=.
+          conan install .. -pr:a cxx11 -s build_type=Release -s compiler.cppstd=17 --build=missing --output-folder=.
           cmake .. -DCMAKE_TOOLCHAIN_FILE="./conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
       - name: build
         run: cd build && cmake --build ./
