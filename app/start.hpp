@@ -7,9 +7,12 @@
 
 struct config
 {
-    int message_size = 1456;
+    int message_size    = 1456;
     bool compensate_rtt = false;
     bool compact_trace  = false;
+    int  duration       = 0;
+    int  sendrate       = 0;
+    unsigned metrics_freq_ms = 1000;
     std::string statsfile;
 };
 
